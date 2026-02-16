@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { supabase } from '@/integrations/supabase/client';
 import { DashboardLayout } from '@/components/DashboardLayout';
 import { MonthYearFilter } from '@/components/MonthYearFilter';
 import { TransactionsTable } from '@/components/TransactionsTable';
@@ -15,30 +14,12 @@ export default function Transactions() {
     const { data: transactions, isLoading } = useTransactions(month, year);
 
     const handleManualSave = async (newTransaction: any) => {
-        try {
-            const {
-                data: { user },
-            } = await supabase.auth.getUser();
-
-            if (!user) {
-                alert('Unauthenticated user!');
-                return;
-            }
-
-            const { error } = await supabase.from('transactions').insert([
-                {
-                    ...newTransaction,
-                    user_id: user.id,
-                },
-            ]);
-
-            if (error) throw error;
-
-            window.location.reload();
-        } catch (error) {
-            console.error('Error saving to Supabase:', error);
-            alert('Error saving transaction.');
-        }
+        await fetch('http://localhost:3001/transactions', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(newTransaction),
+        });
+        window.location.reload();
     };
 
     return (

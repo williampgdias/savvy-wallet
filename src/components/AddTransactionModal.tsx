@@ -41,7 +41,7 @@ export default function AddTransactionModal({
         <>
             <button
                 onClick={() => setIsOpen(true)}
-                className="flex items-center gap-2 px-4 py-2 bg-zinc-900 text-white rounded-lg text-sm font-semibold hover:bg-zinc-800 transition-colos shadow-sm"
+                className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-semibold hover:opacity-90 transition-all shadow-sm"
             >
                 <Plus size={18} />
                 Add Manual
@@ -49,7 +49,7 @@ export default function AddTransactionModal({
 
             {isOpen && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
-                    <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 relative animate-in zoom-in-95 duration-200">
+                    <div className="bg-card text-card-foreground rounded-2xl shadow-2xl w-full max-w-md p-6 relative border border-border animate-in zoom-in-95 duration-200">
                         <button
                             onClick={() => setIsOpen(false)}
                             className="absolute top-4 right-4 text-gray-400 hover:text-gray-600"
@@ -63,7 +63,7 @@ export default function AddTransactionModal({
 
                         <form onSubmit={handleSubmit} className="space-y-4">
                             {/* Type (Income / Expense) */}
-                            <div className="flex bg-gray-100 p-1 rounded-lg">
+                            <div className="flex bg-muted p-1 rounded-lg border border-border">
                                 <button
                                     type="button"
                                     onClick={() =>
@@ -72,7 +72,11 @@ export default function AddTransactionModal({
                                             type: 'expense',
                                         })
                                     }
-                                    className={`flex-1 py-1.5 text-sm font-medium rounded-md transition-colors ${formData.type === 'expense' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+                                    className={`flex-1 py-2 text-sm font-semibold rounded-md transition-all ${
+                                        formData.type === 'expense'
+                                            ? 'bg-destructive text-destructive-foreground shadow-sm'
+                                            : 'text-muted-foreground hover:text-foreground'
+                                    }`}
                                 >
                                     Expense
                                 </button>
@@ -84,7 +88,11 @@ export default function AddTransactionModal({
                                             type: 'income',
                                         })
                                     }
-                                    className={`flex-1 py-1.5 text-sm font-medium rounded-md transition-colors ${formData.type === 'income' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+                                    className={`flex-1 py-2 text-sm font-semibold rounded-md transition-all ${
+                                        formData.type === 'income'
+                                            ? 'bg-success text-success-foreground shadow-sm'
+                                            : 'text-muted-foreground hover:text-foreground'
+                                    }`}
                                 >
                                     Income
                                 </button>
@@ -92,7 +100,7 @@ export default function AddTransactionModal({
 
                             {/* Description */}
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                <label className="block text-sm font-medium text-muted-foreground mb-1 italic">
                                     Description
                                 </label>
                                 <input
@@ -106,13 +114,13 @@ export default function AddTransactionModal({
                                             name: e.target.value,
                                         })
                                     }
-                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-zinc-900"
+                                    className="w-full px-3 py-2 bg-background border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-ring text-foreground"
                                 />
                             </div>
 
                             <div className="flex gap-4">
                                 <div className="flex-1">
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                                    <label className="block text-sm font-medium text-muted-foreground mb-1 italic">
                                         Amount (€)
                                     </label>
                                     <input
@@ -128,11 +136,11 @@ export default function AddTransactionModal({
                                                 amount: e.target.value,
                                             })
                                         }
-                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-zinc-900"
+                                        className="w-full px-3 py-2 bg-background border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-ring text-foreground"
                                     />
                                 </div>
                                 <div className="flex-1">
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                                    <label className="block text-sm font-medium text-muted-foreground mb-1 italic">
                                         Date
                                     </label>
                                     <input
@@ -145,14 +153,14 @@ export default function AddTransactionModal({
                                                 date: e.target.value,
                                             })
                                         }
-                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-zinc-900"
+                                        className="w-full px-3 py-2 bg-background border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-ring text-foreground"
                                     />
                                 </div>
                             </div>
 
                             {/* Category */}
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                <label className="block text-sm font-medium text-muted-foreground mb-1 italic">
                                     Category
                                 </label>
                                 <select
@@ -163,21 +171,39 @@ export default function AddTransactionModal({
                                             category: e.target.value,
                                         })
                                     }
-                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-zinc-900 bg-white"
+                                    className="w-full px-3 py-2 bg-background border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-ring text-foreground"
                                 >
-                                    <option>General</option>
-                                    <option>Groceries</option>
-                                    <option>Dining Out</option>
-                                    <option>Entertainment</option>
-                                    <option>Transportation</option>
-                                    <option>Lifestyle</option>
-                                    <option>Income</option>
+                                    <option value="General">General</option>
+                                    <option value="Groceries">
+                                        Groceries (Lidl/Tesco)
+                                    </option>
+                                    <option value="Dining Out">
+                                        Dining Out (Restaurants/Pubs)
+                                    </option>
+                                    <option value="Transportation">
+                                        Transportation (Leap Card/Luas)
+                                    </option>
+                                    <option value="Lifestyle">
+                                        Lifestyle (Shopping/Gym)
+                                    </option>
+                                    <option value="Entertainment">
+                                        Entertainment (Netflix/Events)
+                                    </option>
+                                    <option value="Health">
+                                        Health (Pharmacy/GP)
+                                    </option>
+                                    <option value="Utilities">
+                                        Utilities (Electric/Bins)
+                                    </option>
+                                    <option value="Income">
+                                        Income (Salary/Refunds)
+                                    </option>
                                 </select>
                             </div>
 
                             <button
                                 type="submit"
-                                className="w-full mt-2 px-4 py-2 bg-zinc-900 text-white rounded-lg text-sm font-semibold hover:bg-zinc-800 transition-colors"
+                                className="w-full mt-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-semibold hover:opacity-90 transition-all"
                             >
                                 Save Transaction
                             </button>
