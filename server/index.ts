@@ -24,6 +24,19 @@ let transactions = [
 
 // Route to list the transactions
 app.get('/transactions', (req, res) => {
+    const { month, year } = req.query;
+
+    if (month && year) {
+        const filtered = transactions.filter((t) => {
+            const date = new Date(t.date);
+            return (
+                date.getMonth() === Number(month) &&
+                date.getFullYear() === Number(year)
+            );
+        });
+        return res.json(filtered);
+    }
+
     res.json(transactions);
 });
 
