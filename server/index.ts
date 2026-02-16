@@ -121,9 +121,33 @@ app.get('/transactions/categories', (req, res) => {
 
 // Route to Add a new transaction
 app.post('/transactions', (req, res) => {
-    const newTransaction = { id: Date.now().toString(), ...req.body };
+    const { name, amount, category, date } = req.body;
+
+    if (!name || name.trim() === '') {
+        return res.status(400).json({ error: 'Description is required' });
+    }
+
+    const numericAmount = Number(amount);
+    if (isNaN(numericAmount) || numericAmount === 0) {
+        return res
+            .status(400)
+            .json({ error: 'A valid non-zero amount is required' });
+    }
+
+    const newTransaction = {
+        id: Date.now().toString(),
+        name: name.trim(),
+        amount: numericAmount,
+        category: category || 'General',
+        date: date || new Date().toISOString().split('T')[0],
+    };
+
     transactions.push(newTransaction);
     saveData(transactions);
+
+    console.log(
+        `✅ Transação adicionada: ${newTransaction.name} (€${newTransaction.amount})`,
+    );
     res.status(201).json(newTransaction);
 });
 
