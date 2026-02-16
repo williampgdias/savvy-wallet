@@ -144,10 +144,6 @@ app.post('/transactions', (req, res) => {
 
     transactions.push(newTransaction);
     saveData(transactions);
-
-    console.log(
-        `✅ Transação adicionada: ${newTransaction.name} (€${newTransaction.amount})`,
-    );
     res.status(201).json(newTransaction);
 });
 

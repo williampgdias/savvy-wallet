@@ -11,10 +11,19 @@ import {
 } from '@/hooks/useTransactions';
 import { Skeleton } from '@/components/ui/skeleton';
 
+interface Transaction {
+    id: string;
+    name: string;
+    amount: number;
+    category: string;
+    date: string;
+}
+
 export default function Index() {
     const now = new Date();
     const [month, setMonth] = useState(now.getMonth());
     const [year, setYear] = useState(now.getFullYear());
+    const [selectedCategory, setSelectedCategory] = useState<string>('All');
 
     const { data: transactions, isLoading: isTransactionsLoading } =
         useTransactions(month, year);
@@ -26,6 +35,11 @@ export default function Index() {
         month,
         year,
     );
+    const filteredTransactions =
+        (transactions as Transaction[])?.filter(
+            (t) =>
+                selectedCategory === 'All' || t.category === selectedCategory,
+        ) ?? [];
 
     return (
         <DashboardLayout>
@@ -70,14 +84,38 @@ export default function Index() {
                     )}
 
                     <div className="space-y-4">
-                        <h2 className="text-base font-medium">
-                            Recent Transactions
-                        </h2>
+                        <div className="flex items-center justify-between mb-4">
+                            <h2 className="text-base font-medium text-foreground">
+                                Recent Transactions
+                            </h2>
+                            <select
+                                value={selectedCategory}
+                                onChange={(e) =>
+                                    setSelectedCategory(e.target.value)
+                                }
+                                className="text-sm bg-transparent border border-border/50 rounded-md px-2 py-1 focus:outline-none italic text-muted-foreground hover:text-foreground transition-colors"
+                            >
+                                <option value="All">All Categories</option>
+                                <option value="Groceries">Groceries</option>
+                                <option value="Dining Out">Dining Out</option>
+                                <option value="Transportation">
+                                    Transportation
+                                </option>
+                                <option value="Lifestyle">Lifestyle</option>
+                                <option value="Entertainment">
+                                    Entertainment
+                                </option>
+                                <option value="Health">Health</option>
+                                <option value="Utilities">Utilities</option>
+                                <option value="Income">Income</option>
+                                <option value="General">General</option>
+                            </select>
+                        </div>
                         {isTransactionsLoading ? (
                             <Skeleton className="h-64 rounded-xl" />
                         ) : (
                             <TransactionsTable
-                                transactions={transactions ?? []}
+                                transactions={filteredTransactions}
                             />
                         )}
                     </div>
