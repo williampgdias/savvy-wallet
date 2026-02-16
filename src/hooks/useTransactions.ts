@@ -3,18 +3,20 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
 const API_URL = 'http://localhost:3001/transactions';
 
-export function useTransactions(month: number, year: number) {
+export function useTransactions(month: number, year: number, page: number = 1) {
     return useQuery({
-        queryKey: ['transactions', month, year],
+        queryKey: ['transactions', month, year, page],
         queryFn: async () => {
             const response = await fetch(
-                `${API_URL}?month=${month}&year=${year}`,
+                `${API_URL}?month=${month}&year=${year}&page=${page}&limit=5`,
             );
             if (!response.ok)
                 throw new Error(
                     'Error retrieving transactions from the server.',
                 );
-            return response.json();
+
+            const result = await response.json();
+            return result;
         },
     });
 }
@@ -75,7 +77,7 @@ export function useCategoryData(month: number, year: number) {
                 `http://localhost:3001/transactions/categories?month=${month}&year=${year}`,
             );
             if (!response.ok)
-                throw new Error('Erro ao buscar dados das categorias');
+                throw new Error('Error retrieving data from the categories.');
             return response.json();
         },
     });

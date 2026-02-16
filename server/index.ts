@@ -3,6 +3,7 @@ import express from 'express';
 import cors from 'cors';
 import fs from 'fs';
 import path from 'path';
+import { start } from 'repl';
 
 const app = express();
 app.use(cors());
@@ -48,20 +49,29 @@ let transactions = loadData();
 
 // Route to list the transactions
 app.get('/transactions', (req, res) => {
-    const { month, year } = req.query;
+    const { month, year, page = 1, limit = 5 } = req.query;
 
-    if (month && year) {
-        const filtered = transactions.filter((t) => {
-            const date = new Date(t.date);
-            return (
-                date.getMonth() === Number(month) &&
-                date.getFullYear() === Number(year)
-            );
-        });
-        return res.json(filtered);
-    }
+    const filtered = transactions.filter((t) => {
+        const date = new Date(t.date);
+        return (
+            date.getMonth() === Number(month) &&
+            date.getFullYear() === Number(year)
+        );
+    });
 
-    res.json(transactions);
+    filtered.sort(
+        (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
+    );
+
+    const startIndex = (Number(page) - 1) * Number(limit);
+    const endIndex = startIndex + Number(limit);
+    const paginatedItems = filtered.slice(startIndex, endIndex);
+
+    res.json({
+        data: paginatedItems,
+        total: filtered.length,
+        totalPages: Math.ceil(filtered.length / Number(limit)),
+    });
 });
 
 // Route to Dashboard Summary

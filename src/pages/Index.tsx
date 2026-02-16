@@ -35,8 +35,9 @@ export default function Index() {
         month,
         year,
     );
+
     const filteredTransactions =
-        (transactions as Transaction[])?.filter(
+        ((transactions?.data as Transaction[]) || [])?.filter(
             (t) =>
                 selectedCategory === 'All' || t.category === selectedCategory,
         ) ?? [];
