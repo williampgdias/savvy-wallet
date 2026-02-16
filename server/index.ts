@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import express from 'express';
 import cors from 'cors';
 
@@ -40,20 +41,6 @@ app.get('/transactions', (req, res) => {
     res.json(transactions);
 });
 
-// Route to Add a new transaction
-app.post('/transactions', (req, res) => {
-    const newTransaction = { id: Date.now().toString(), ...req.body };
-    transactions.push(newTransaction);
-    res.status(201).json(newTransaction);
-});
-
-// Route to delete the transaction
-app.delete('/transactions/:id', (req, res) => {
-    const { id } = req.params;
-    transactions = transactions.filter((t) => t.id !== id);
-    res.status(204).send();
-});
-
 // Route to Dashboard Summary
 app.get('/transactions/summary', (req, res) => {
     const { month, year } = req.query;
@@ -80,6 +67,47 @@ app.get('/transactions/summary', (req, res) => {
         balance: income - expenses,
         transactionCount: filtered.length,
     });
+});
+
+app.get('/transactions/categories', (req, res) => {
+    const { month, year } = req.query;
+
+    const filtered = transactions.filter((t) => {
+        const date = new Date(t.date);
+        return (
+            date.getMonth() === Number(month) &&
+            date.getFullYear() === Number(year)
+        );
+    });
+
+    const expenses = filtered.filter((t) => Number(t.amount) < 0);
+
+    const categoryMap = expenses.reduce((acc: any, t) => {
+        const cat = t.category || 'General';
+        acc[cat] = (acc[cat] || 0) + Math.abs(Number(t.amount));
+        return acc;
+    }, {});
+
+    const formattedData = Object.entries(categoryMap).map(([name, value]) => ({
+        name,
+        value,
+    }));
+
+    res.json(formattedData);
+});
+
+// Route to Add a new transaction
+app.post('/transactions', (req, res) => {
+    const newTransaction = { id: Date.now().toString(), ...req.body };
+    transactions.push(newTransaction);
+    res.status(201).json(newTransaction);
+});
+
+// Route to delete the transaction
+app.delete('/transactions/:id', (req, res) => {
+    const { id } = req.params;
+    transactions = transactions.filter((t) => t.id !== id);
+    res.status(204).send();
 });
 
 const PORT = 3001;

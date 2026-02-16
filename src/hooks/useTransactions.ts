@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
 const API_URL = 'http://localhost:3001/transactions';
@@ -62,6 +63,20 @@ export function useDeleteTransaction() {
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['transactions'] });
+        },
+    });
+}
+
+export function useCategoryData(month: number, year: number) {
+    return useQuery({
+        queryKey: ['categories', month, year],
+        queryFn: async () => {
+            const response = await fetch(
+                `http://localhost:3001/transactions/categories?month=${month}&year=${year}`,
+            );
+            if (!response.ok)
+                throw new Error('Erro ao buscar dados das categorias');
+            return response.json();
         },
     });
 }
