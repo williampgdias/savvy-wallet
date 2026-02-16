@@ -4,35 +4,41 @@ import { MonthYearFilter } from '@/components/MonthYearFilter';
 import { SummaryCards } from '@/components/SummaryCards';
 import { CategoryChart } from '@/components/CategoryChart';
 import { TransactionsTable } from '@/components/TransactionsTable';
-import { useTransactions } from '@/hooks/useTransactions';
+import { useTransactions, useSummary } from '@/hooks/useTransactions';
 import { Skeleton } from '@/components/ui/skeleton';
+
+interface Transaction {
+    id: string;
+    name: string;
+    amount: number;
+    category: string;
+    date: string;
+}
 
 export default function Index() {
     const now = new Date();
     const [month, setMonth] = useState(now.getMonth());
     const [year, setYear] = useState(now.getFullYear());
-    const { data: transactions, isLoading } = useTransactions(month, year);
 
-    const income =
-        transactions
-            ?.filter((t) => t.is_income)
-            .reduce((s, t) => s + Number(t.amount), 0) ?? 0;
-    const expenses =
-        transactions
-            ?.filter((t) => !t.is_income)
-            .reduce((s, t) => s + Number(t.amount), 0) ?? 0;
-
+    const { data: transactions, isLoading: isTransactionsLoading } =
+        useTransactions(month, year);
+    const { data: summary, isLoading: isSummaryLoading } = useSummary(
+        month,
+        year,
+    );
     const categoryData =
-        transactions
-            ?.filter((t) => !t.is_income)
+        ((transactions as Transaction[]) || [])
+            .filter((t) => Number(t.amount) < 0)
             .reduce<Record<string, number>>((acc, t) => {
-                acc[t.category] = (acc[t.category] || 0) + Number(t.amount);
+                const category = t.category || 'General';
+                acc[category] =
+                    (acc[category] || 0) + Math.abs(Number(t.amount));
                 return acc;
             }, {}) ?? {};
 
     const chartData = Object.entries(categoryData).map(([name, value]) => ({
         name,
-        value,
+        value: Number(value),
     }));
 
     return (
@@ -44,29 +50,30 @@ export default function Index() {
                             Dashboard
                         </h1>
                         <p className="text-sm text-muted-foreground">
-                            Your financial overview
+                            Your financies overview
                         </p>
                     </div>
-                    <div className="flex items-center gap-3">
-                        <MonthYearFilter
-                            month={month}
-                            year={year}
-                            onChange={(m, y) => {
-                                setMonth(m);
-                                setYear(y);
-                            }}
-                        />
-                    </div>
+                    <MonthYearFilter
+                        month={month}
+                        year={year}
+                        onChange={(m, y) => {
+                            setMonth(m);
+                            setYear(y);
+                        }}
+                    />
                 </div>
 
-                {isLoading ? (
+                {isSummaryLoading ? (
                     <div className="grid gap-4 sm:grid-cols-3">
                         {[1, 2, 3].map((i) => (
                             <Skeleton key={i} className="h-24 rounded-xl" />
                         ))}
                     </div>
                 ) : (
-                    <SummaryCards income={income} expenses={expenses} />
+                    <SummaryCards
+                        income={Number(summary?.income) || 0}
+                        expenses={Number(summary?.expenses) || 0}
+                    />
                 )}
 
                 <div className="grid gap-6 lg:grid-cols-2">
@@ -75,7 +82,7 @@ export default function Index() {
                         <h2 className="text-base font-medium">
                             Recent Transactions
                         </h2>
-                        {isLoading ? (
+                        {isTransactionsLoading ? (
                             <Skeleton className="h-64 rounded-xl" />
                         ) : (
                             <TransactionsTable

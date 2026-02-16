@@ -18,6 +18,19 @@ export function useTransactions(month: number, year: number) {
     });
 }
 
+export function useSummary(month: number, year: number) {
+    return useQuery({
+        queryKey: ['summary', month, year],
+        queryFn: async () => {
+            const response = await fetch(
+                `http://localhost:3001/transactions/summary?month=${month}&year=${year}`,
+            );
+            if (!response.ok) throw new Error('Error retrieving summary.');
+            return response.json();
+        },
+    });
+}
+
 export function useInsertTransactions() {
     const queryClient = useQueryClient();
 

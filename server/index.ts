@@ -58,7 +58,7 @@ app.delete('/transactions/:id', (req, res) => {
 app.get('/transactions/summary', (req, res) => {
     const { month, year } = req.query;
 
-    const filteredTransactions = transactions.filter((t) => {
+    const filtered = transactions.filter((t) => {
         const date = new Date(t.date);
         return (
             date.getMonth() === Number(month) &&
@@ -66,21 +66,19 @@ app.get('/transactions/summary', (req, res) => {
         );
     });
 
-    const income = filteredTransactions
-        .filter((t) => t.amount > 0)
-        .reduce((acc, t) => acc + t.amount, 0);
+    const income = filtered
+        .filter((t) => Number(t.amount) > 0)
+        .reduce((acc, t) => acc + Number(t.amount), 0);
 
-    const expenses = filteredTransactions
-        .filter((t) => t.amount < 0)
-        .reduce((acc, t) => acc + Math.abs(t.amount), 0);
-
-    const balance = income - expenses;
+    const expenses = filtered
+        .filter((t) => Number(t.amount) < 0)
+        .reduce((acc, t) => acc + Math.abs(Number(t.amount)), 0);
 
     res.json({
         income,
         expenses,
-        balance,
-        transactionCount: filteredTransactions.length,
+        balance: income - expenses,
+        transactionCount: filtered.length,
     });
 });
 
