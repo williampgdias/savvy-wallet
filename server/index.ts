@@ -54,6 +54,36 @@ app.delete('/transactions/:id', (req, res) => {
     res.status(204).send();
 });
 
+// Route to Dashboard Summary
+app.get('/transactions/summary', (req, res) => {
+    const { month, year } = req.query;
+
+    const filteredTransactions = transactions.filter((t) => {
+        const date = new Date(t.date);
+        return (
+            date.getMonth() === Number(month) &&
+            date.getFullYear() === Number(year)
+        );
+    });
+
+    const income = filteredTransactions
+        .filter((t) => t.amount > 0)
+        .reduce((acc, t) => acc + t.amount, 0);
+
+    const expenses = filteredTransactions
+        .filter((t) => t.amount < 0)
+        .reduce((acc, t) => acc + Math.abs(t.amount), 0);
+
+    const balance = income - expenses;
+
+    res.json({
+        income,
+        expenses,
+        balance,
+        transactionCount: filteredTransactions.length,
+    });
+});
+
 const PORT = 3001;
 app.listen(PORT, () =>
     console.log(`🚀 API running at http://localhost:${PORT}`),
