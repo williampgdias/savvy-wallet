@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState } from 'react';
 import { Plus, X } from 'lucide-react';
 
@@ -19,6 +20,7 @@ export default function AddTransactionModal({
         e.preventDefault();
 
         let finalAmount = parseFloat(formData.amount);
+
         if (formData.type === 'expense') {
             finalAmount = -Math.abs(finalAmount);
         } else {
@@ -30,7 +32,6 @@ export default function AddTransactionModal({
             amount: finalAmount,
             category: formData.category,
             date: formData.date,
-            is_income: formData.type === 'income',
         });
 
         setIsOpen(false);
