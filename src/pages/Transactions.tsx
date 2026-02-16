@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState } from 'react';
 import { DashboardLayout } from '@/components/DashboardLayout';
 import { MonthYearFilter } from '@/components/MonthYearFilter';
@@ -11,7 +12,10 @@ export default function Transactions() {
     const now = new Date();
     const [month, setMonth] = useState(now.getMonth());
     const [year, setYear] = useState(now.getFullYear());
-    const { data: transactions, isLoading } = useTransactions(month, year);
+    const { data: transactionsResult, isLoading } = useTransactions(
+        month,
+        year,
+    );
 
     const handleManualSave = async (newTransaction: any) => {
         await fetch('http://localhost:3001/transactions', {
@@ -51,7 +55,9 @@ export default function Transactions() {
                 {isLoading ? (
                     <Skeleton className="h-96 rounded-xl" />
                 ) : (
-                    <TransactionsTable transactions={transactions ?? []} />
+                    <TransactionsTable
+                        transactions={transactionsResult.data ?? []}
+                    />
                 )}
             </div>
         </DashboardLayout>

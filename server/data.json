@@ -12,5 +12,33 @@
     "amount": 3000,
     "category": "Income",
     "date": "2026-02-05"
+  },
+  {
+    "id": "1771285646284",
+    "name": "teste",
+    "amount": -1000,
+    "category": "Income",
+    "date": "2026-02-16"
+  },
+  {
+    "id": "1771285654615",
+    "name": "coffee",
+    "amount": -2,
+    "category": "Dining Out",
+    "date": "2026-02-16"
+  },
+  {
+    "id": "1771285669518",
+    "name": "Gym",
+    "amount": -39.99,
+    "category": "Lifestyle",
+    "date": "2026-02-16"
+  },
+  {
+    "id": "1771285705493",
+    "name": "Penneys",
+    "amount": -33,
+    "category": "Lifestyle",
+    "date": "2026-02-16"
   }
 ]
