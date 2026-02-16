@@ -1,27 +1,50 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import express from 'express';
 import cors from 'cors';
+import fs from 'fs';
+import path from 'path';
 
 const app = express();
 app.use(cors());
 app.use(express.json());
 
-let transactions = [
-    {
-        id: '1',
-        name: 'Rent',
-        amount: -1200,
-        category: 'Utilities',
-        date: '2026-02-01',
-    },
-    {
-        id: '2',
-        name: 'Salary',
-        amount: 3000,
-        category: 'Income',
-        date: '2026-02-05',
-    },
-];
+const DATA_FILE = path.join(__dirname, 'data.json');
+
+const loadData = (): any[] => {
+    try {
+        if (!fs.existsSync(DATA_FILE)) {
+            const initialData = [
+                {
+                    id: '1',
+                    name: 'Rent',
+                    amount: -1200,
+                    category: 'Utilities',
+                    date: '2026-02-01',
+                },
+                {
+                    id: '2',
+                    name: 'Salary',
+                    amount: 3000,
+                    category: 'Income',
+                    date: '2026-02-05',
+                },
+            ];
+            fs.writeFileSync(DATA_FILE, JSON.stringify(initialData, null, 2));
+            return initialData;
+        }
+        const data = fs.readFileSync(DATA_FILE, 'utf-8');
+        return JSON.parse(data);
+    } catch (error) {
+        console.error('Error reading file:', error);
+        return [];
+    }
+};
+
+const saveData = (data: any[]) => {
+    fs.writeFileSync(DATA_FILE, JSON.stringify(data, null, 2));
+};
+
+let transactions = loadData();
 
 // Route to list the transactions
 app.get('/transactions', (req, res) => {
@@ -100,6 +123,7 @@ app.get('/transactions/categories', (req, res) => {
 app.post('/transactions', (req, res) => {
     const newTransaction = { id: Date.now().toString(), ...req.body };
     transactions.push(newTransaction);
+    saveData(transactions);
     res.status(201).json(newTransaction);
 });
 
@@ -107,6 +131,7 @@ app.post('/transactions', (req, res) => {
 app.delete('/transactions/:id', (req, res) => {
     const { id } = req.params;
     transactions = transactions.filter((t) => t.id !== id);
+    saveData(transactions);
     res.status(204).send();
 });
 
