@@ -5,12 +5,12 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { ThemeProvider } from 'next-themes';
 import { AuthProvider, useAuth } from '@/hooks/useAuth';
-import Index from './pages/Index';
-import Transactions from './pages/Transactions';
-import Import from './pages/Import';
-import Auth from './pages/Auth';
-import NotFound from './pages/NotFound';
 import { Loader2 } from 'lucide-react';
+import Index from './pages/Index';
+import Import from './pages/Import';
+import NotFound from './pages/NotFound';
+import Transactions from './pages/Transactions';
+import PotsPage from './pages/Pots';
 
 const queryClient = new QueryClient();
 
@@ -35,7 +35,6 @@ const App = () => (
                 <BrowserRouter>
                     <AuthProvider>
                         <Routes>
-                            <Route path="/auth" element={<Auth />} />
                             <Route
                                 path="/"
                                 element={
@@ -49,6 +48,14 @@ const App = () => (
                                 element={
                                     <ProtectedRoute>
                                         <Transactions />
+                                    </ProtectedRoute>
+                                }
+                            />
+                            <Route
+                                path="/pots"
+                                element={
+                                    <ProtectedRoute>
+                                        <PotsPage />
                                     </ProtectedRoute>
                                 }
                             />

@@ -8,8 +8,10 @@ import {
     useTransactions,
     useSummary,
     useCategoryData,
+    usePots,
 } from '@/hooks/useTransactions';
 import { Skeleton } from '@/components/ui/skeleton';
+import { PotsCard } from '@/components/PotsCard';
 
 interface Transaction {
     id: string;
@@ -36,6 +38,7 @@ export default function Index() {
         month,
         year,
     );
+    const { data: pots = [] } = usePots();
 
     const filteredTransactions =
         ((transactions?.data as Transaction[]) || [])?.filter(
@@ -82,7 +85,15 @@ export default function Index() {
                     {isChartLoading ? (
                         <Skeleton className="h-[300px] w-full rounded-xl" />
                     ) : (
-                        <CategoryChart data={chartData ?? []} />
+                        <div className="space-y-6">
+                            <CategoryChart data={chartData ?? []} />
+                            <PotsCard
+                                pots={pots}
+                                onAddMoney={(id) =>
+                                    console.log('Add to pot:', id)
+                                }
+                            />
+                        </div>
                     )}
 
                     <div className="space-y-4">

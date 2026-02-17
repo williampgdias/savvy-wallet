@@ -82,3 +82,14 @@ export function useCategoryData(month: number, year: number) {
         },
     });
 }
+
+export function usePots() {
+    return useQuery({
+        queryKey: ['pots'],
+        queryFn: async () => {
+            const response = await fetch('http://localhost:3001/pots');
+            if (!response.ok) throw new Error('Error searching for pots');
+            return response.json();
+        },
+    });
+}
