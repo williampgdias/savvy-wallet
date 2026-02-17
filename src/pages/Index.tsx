@@ -24,9 +24,10 @@ export default function Index() {
     const [month, setMonth] = useState(now.getMonth());
     const [year, setYear] = useState(now.getFullYear());
     const [selectedCategory, setSelectedCategory] = useState<string>('All');
+    const [page, setPage] = useState(1);
 
     const { data: transactions, isLoading: isTransactionsLoading } =
-        useTransactions(month, year);
+        useTransactions(month, year, page);
     const { data: summary, isLoading: isSummaryLoading } = useSummary(
         month,
         year,
@@ -115,9 +116,41 @@ export default function Index() {
                         {isTransactionsLoading ? (
                             <Skeleton className="h-64 rounded-xl" />
                         ) : (
-                            <TransactionsTable
-                                transactions={filteredTransactions}
-                            />
+                            <>
+                                <TransactionsTable
+                                    transactions={filteredTransactions}
+                                />
+
+                                <div className="flex items-center justify-between pt-2 border-t border-border/50">
+                                    <p className="text-xs text-muted-foreground italic">
+                                        Page {page} of{' '}
+                                        {transactions?.totalPages || 1}
+                                    </p>
+                                    <div className="flex gap-2">
+                                        <button
+                                            disabled={page === 1}
+                                            onClick={() =>
+                                                setPage((prev) => prev - 1)
+                                            }
+                                            className="px-3 py-1 text-xs font-semibold bg-secondary text-secondary-foreground rounded-md disabled:opacity-30 hover:bg-secondary/80 transition-all"
+                                        >
+                                            Previous
+                                        </button>
+                                        <button
+                                            disabled={
+                                                page >=
+                                                (transactions?.totalPages || 1)
+                                            }
+                                            onClick={() =>
+                                                setPage((prev) => prev + 1)
+                                            }
+                                            className="px-3 py-1 text-xs font-semibold bg-secondary text-secondary-foreground rounded-md disabled:opacity-30 hover:bg-secondary/80 transition-all"
+                                        >
+                                            Next
+                                        </button>
+                                    </div>
+                                </div>
+                            </>
                         )}
                     </div>
                 </div>

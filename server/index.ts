@@ -59,13 +59,16 @@ app.get('/transactions', (req, res) => {
         );
     });
 
-    filtered.sort(
-        (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
-    );
+    const sorted = [...filtered].sort((a, b) => {
+        const dateA = new Date(a.date).getTime();
+        const dateB = new Date(b.date).getTime();
+        if (dateB !== dateA) return dateB - dateA;
+        return b.id.localeCompare(a.id);
+    });
 
     const startIndex = (Number(page) - 1) * Number(limit);
     const endIndex = startIndex + Number(limit);
-    const paginatedItems = filtered.slice(startIndex, endIndex);
+    const paginatedItems = sorted.slice(startIndex, endIndex);
 
     res.json({
         data: paginatedItems,
