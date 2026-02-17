@@ -28,8 +28,8 @@ import { Button } from '@/components/ui/button';
 const navItems = [
     { title: 'Dashboard', url: '/', icon: LayoutDashboard },
     { title: 'Transactions', url: '/transactions', icon: List },
-    { title: 'Import', url: '/import', icon: Upload },
     { title: 'Saving Pots', url: '/pots', icon: PiggyBank },
+    { title: 'Import', url: '/import', icon: Upload },
 ];
 
 export function AppSidebar() {
@@ -80,15 +80,6 @@ export function AppSidebar() {
 
             <SidebarFooter className="p-3 space-y-1">
                 <ThemeToggle />
-                {/* <Button
-                    variant="ghost"
-                    size={collapsed ? 'icon' : 'default'}
-                    onClick={signOut}
-                    className="w-full justify-start rounded-xl text-muted-foreground hover:text-foreground"
-                >
-                    <LogOut className="h-4 w-4 shrink-0" />
-                    {!collapsed && <span className="ml-3">Sign out</span>}
-                </Button> */}
             </SidebarFooter>
         </Sidebar>
     );

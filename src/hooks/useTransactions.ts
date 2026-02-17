@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { toast } from 'sonner';
 
 const API_URL = 'http://localhost:3001/transactions';
 
@@ -90,6 +91,29 @@ export function usePots() {
             const response = await fetch('http://localhost:3001/pots');
             if (!response.ok) throw new Error('Error searching for pots');
             return response.json();
+        },
+    });
+}
+
+export function useCreatePot() {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: async (newPot: { name: string; targetAmount: number }) => {
+            const response = await fetch('http://localhost:3001/pots', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(newPot),
+            });
+            if (!response.ok) throw new Error('Failed to create pot');
+            return response.json();
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['pots'] });
+            toast.success('New savings pot created!');
+        },
+        onError: () => {
+            toast.error('Error creating pot. Try again.');
         },
     });
 }
