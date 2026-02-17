@@ -1,51 +1,12 @@
-[
-  {
-    "id": "1",
-    "name": "Rent",
-    "amount": -1200,
-    "category": "Utilities",
-    "date": "2026-02-01"
-  },
-  {
-    "id": "2",
-    "name": "Salary",
-    "amount": 3000,
-    "category": "Income",
-    "date": "2026-02-05"
-  },
-  {
-    "id": "1771285646284",
-    "name": "teste",
-    "amount": -1000,
-    "category": "Income",
-    "date": "2026-02-16"
-  },
-  {
-    "id": "1771285654615",
-    "name": "coffee",
-    "amount": -2,
-    "category": "Dining Out",
-    "date": "2026-02-16"
-  },
-  {
-    "id": "1771285669518",
-    "name": "Gym",
-    "amount": -39.99,
-    "category": "Lifestyle",
-    "date": "2026-02-16"
-  },
-  {
-    "id": "1771285705493",
-    "name": "Penneys",
-    "amount": -33,
-    "category": "Lifestyle",
-    "date": "2026-02-16"
-  },
-  {
-    "id": "1771285783288",
-    "name": "penneys",
-    "amount": -50,
-    "category": "Lifestyle",
-    "date": "2026-02-16"
-  }
-]
+{
+    "transactions": [
+        {
+            "id": "1771369310714",
+            "name": "Coffee",
+            "amount": -2,
+            "category": "Dining Out",
+            "date": "2026-02-17"
+        }
+    ],
+    "pots": []
+}

@@ -11,41 +11,24 @@ app.use(express.json());
 
 const DATA_FILE = path.join(__dirname, 'data.json');
 
-const loadData = (): any[] => {
-    try {
-        if (!fs.existsSync(DATA_FILE)) {
-            const initialData = [
-                {
-                    id: '1',
-                    name: 'Rent',
-                    amount: -1200,
-                    category: 'Utilities',
-                    date: '2026-02-01',
-                },
-                {
-                    id: '2',
-                    name: 'Salary',
-                    amount: 3000,
-                    category: 'Income',
-                    date: '2026-02-05',
-                },
-            ];
-            fs.writeFileSync(DATA_FILE, JSON.stringify(initialData, null, 2));
-            return initialData;
-        }
-        const data = fs.readFileSync(DATA_FILE, 'utf-8');
-        return JSON.parse(data);
-    } catch (error) {
-        console.error('Error reading file:', error);
-        return [];
+const loadData = (): { transactions: any[]; pots: any[] } => {
+    if (!fs.existsSync(DATA_FILE)) {
+        return { transactions: [], pots: [] };
     }
+    const data = fs.readFileSync(DATA_FILE, 'utf-8');
+    const parsed = JSON.parse(data);
+    return {
+        transactions: parsed.transactions || [],
+        pots: parsed.pots || [],
+    };
 };
 
-const saveData = (data: any[]) => {
+const saveData = (data: { transactions: any[]; pots: any[] }) => {
     fs.writeFileSync(DATA_FILE, JSON.stringify(data, null, 2));
 };
 
-let transactions = loadData();
+// eslint-disable-next-line prefer-const
+let { transactions, pots } = loadData();
 
 // Route to list the transactions
 app.get('/transactions', (req, res) => {
@@ -132,6 +115,33 @@ app.get('/transactions/categories', (req, res) => {
     res.json(formattedData);
 });
 
+// Fetch the pots
+app.get('/pots', (req, res) => {
+    res.json(pots);
+});
+
+// Create a new pot
+app.post('/pots', (req, res) => {
+    const { name, targetAmount } = req.body;
+
+    if (!name || !targetAmount) {
+        return res
+            .status(400)
+            .json({ error: 'Name and target amount are required.' });
+    }
+
+    const newPot = {
+        id: Date.now().toString(),
+        name,
+        targetAmount: Number(targetAmount),
+        currentAmount: 0,
+    };
+
+    pots.push(newPot);
+    saveData({ transactions, pots });
+    res.status(201).json(newPot);
+});
+
 // Route to Add a new transaction
 app.post('/transactions', (req, res) => {
     const { name, amount, category, date } = req.body;
@@ -156,7 +166,7 @@ app.post('/transactions', (req, res) => {
     };
 
     transactions.push(newTransaction);
-    saveData(transactions);
+    saveData({ transactions, pots });
     res.status(201).json(newTransaction);
 });
 
@@ -164,7 +174,7 @@ app.post('/transactions', (req, res) => {
 app.delete('/transactions/:id', (req, res) => {
     const { id } = req.params;
     transactions = transactions.filter((t) => t.id !== id);
-    saveData(transactions);
+    saveData({ transactions, pots });
     res.status(204).send();
 });
 
