@@ -13,11 +13,14 @@ interface Pot {
 
 interface Props {
     pot: Pot;
+    variant?: 'default' | 'compact';
 }
 
-export function PotsCard({ pot }: Props) {
-    const deletePot = useDeletePot();
+export function PotsCard({ pot, variant = 'default' }: Props) {
     const depositPot = useDepositPot();
+    const deletePot = useDeletePot();
+
+    if (!pot) return null;
 
     const percentage = Math.min(
         (pot.currentAmount / pot.targetAmount) * 100,
@@ -33,8 +36,28 @@ export function PotsCard({ pot }: Props) {
         }
     };
 
+    // Compact PotsCard
+    if (variant === 'compact') {
+        return (
+            <div className="space-y-2 p-1">
+                <div className="flex justify-between text-sm font-medium">
+                    <span>{pot.name}</span>
+                    <span className="text-muted-foreground">
+                        {percentage.toFixed(0)}%
+                    </span>
+                </div>
+                <Progress value={percentage} className="h-2" />
+                <div className="flex justify-between text-[10px] text-muted-foreground italic">
+                    <span>Saved: €{pot.currentAmount.toFixed(2)}</span>
+                    <span>Target: €{pot.currentAmount.toFixed(2)}</span>
+                </div>
+            </div>
+        );
+    }
+
+    // Default PotsCard
     return (
-        <Card className="relative border-border/50 shadow-sm hover:shadow-md transition-shadow">
+        <Card className="relative border-border/50 shadow-sm hover:shadow-md transition-all">
             <Button
                 variant="ghost"
                 size="icon"

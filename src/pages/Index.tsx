@@ -4,6 +4,7 @@ import { MonthYearFilter } from '@/components/MonthYearFilter';
 import { SummaryCards } from '@/components/SummaryCards';
 import { CategoryChart } from '@/components/CategoryChart';
 import { TransactionsTable } from '@/components/TransactionsTable';
+import { Button } from '@/components/ui/button';
 import {
     useTransactions,
     useSummary,
@@ -12,6 +13,7 @@ import {
 } from '@/hooks/useTransactions';
 import { Skeleton } from '@/components/ui/skeleton';
 import { PotsCard } from '@/components/PotsCard';
+import { Link } from 'react-router-dom';
 
 interface Transaction {
     id: string;
@@ -87,12 +89,29 @@ export default function Index() {
                     ) : (
                         <div className="space-y-6">
                             <CategoryChart data={chartData ?? []} />
-                            <PotsCard
-                                pots={pots}
-                                onAddMoney={(id) =>
-                                    console.log('Add to pot:', id)
-                                }
-                            />
+                            {/* <PotsCard pot={pots[0]} /> */}
+                            {/* POTS */}
+                            <div className="bg-card border border-border/50 rounded-xl p-6 space-y-6">
+                                <h2 className="text-base font-medium">
+                                    Savings Progress
+                                </h2>
+                                <div className="space-y-6">
+                                    {pots.slice(0, 3).map((pot) => (
+                                        <PotsCard
+                                            key={pot.id}
+                                            pot={pot}
+                                            variant="compact"
+                                        />
+                                    ))}
+                                </div>
+                                <Button
+                                    variant="ghost"
+                                    className="w-full text-xs text-muted-foreground hover:text-primary"
+                                    asChild
+                                >
+                                    <Link to="/pots">View all goals →</Link>
+                                </Button>
+                            </div>
                         </div>
                     )}
 

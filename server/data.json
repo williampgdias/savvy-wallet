@@ -1,24 +1,10 @@
 {
   "transactions": [
     {
-      "id": "1771369310714",
-      "name": "Coffee",
-      "amount": -2,
-      "category": "Dining Out",
-      "date": "2026-02-17"
-    },
-    {
-      "id": "1771455680635",
-      "name": "Saving: New Car",
-      "amount": -150,
-      "category": "Savings",
-      "date": "2026-02-18"
-    },
-    {
-      "id": "1771455690959",
-      "name": "Saving: New Car",
-      "amount": -1000,
-      "category": "Savings",
+      "id": "1771457202364",
+      "name": "Teste",
+      "amount": -100,
+      "category": "General",
       "date": "2026-02-18"
     }
   ],
@@ -28,18 +14,6 @@
       "name": "New Car",
       "targetAmount": 2000,
       "currentAmount": 1150
-    },
-    {
-      "id": "1771442113308",
-      "name": "Teste",
-      "targetAmount": 2,
-      "currentAmount": 0
-    },
-    {
-      "id": "1771442118622",
-      "name": "trres",
-      "targetAmount": 111,
-      "currentAmount": 0
     }
   ]
 }
