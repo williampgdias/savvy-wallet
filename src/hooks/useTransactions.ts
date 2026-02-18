@@ -117,3 +117,41 @@ export function useCreatePot() {
         },
     });
 }
+
+export function useDeletePot() {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: async (id: string) => {
+            await fetch(`http://localhost:3001/pots/${id}`, {
+                method: 'DELETE',
+            });
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['pots'] });
+            toast.success('Pot Deleted!');
+        },
+    });
+}
+
+export function useDepositPot() {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: async ({ id, amount }: { id: string; amount: number }) => {
+            const response = await fetch(
+                `http://localhost:3001/pots/${id}/deposit`,
+                {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ amount }),
+                },
+            );
+            return response.json();
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['pots'] });
+            queryClient.invalidateQueries({ queryKey: ['transactions'] });
+            queryClient.invalidateQueries({ queryKey: ['summary'] });
+            toast.success('Money saved and balance updated! 💸');
+        },
+    });
+}

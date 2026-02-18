@@ -178,6 +178,42 @@ app.delete('/transactions/:id', (req, res) => {
     res.status(204).send();
 });
 
+// Route to delete a Pot
+app.delete('/pots/:id', (req, res) => {
+    const { id } = req.params;
+    pots = pots.filter((p) => p.id !== id);
+    saveData({ transactions, pots });
+    res.status(204).send();
+});
+
+// Route to add money to the Pot and create the transaction
+app.post('/pots/:id/deposit', (req, res) => {
+    const { id } = req.params;
+    const { amount } = req.body;
+
+    const potIndex = pots.findIndex((p) => p.id === id);
+    if (potIndex === -1)
+        return res.status(404).json({ error: 'Pot not found' });
+
+    const depositAmount = Number(amount);
+
+    pots[potIndex].currentAmount += depositAmount;
+
+    // Create automatically the expense transaction
+    const newTransaction = {
+        id: Date.now().toString(),
+        name: `Saving: ${pots[potIndex].name}`,
+        amount: -depositAmount,
+        category: 'Savings',
+        date: new Date().toISOString().split('T')[0],
+    };
+
+    transactions.push(newTransaction);
+
+    saveData({ transactions, pots });
+    res.json({ pot: pots[potIndex], transaction: newTransaction });
+});
+
 const PORT = 3001;
 app.listen(PORT, () =>
     console.log(`🚀 API running at http://localhost:${PORT}`),
