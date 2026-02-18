@@ -13,9 +13,10 @@ interface Pot {
 interface Props {
     pots: Pot[];
     onAddMoney: (id: string) => void;
+    onCreateNew: () => void;
 }
 
-export function PotsCard({ pots, onAddMoney }: Props) {
+export function PotsCard({ pots, onAddMoney, onCreateNew }: Props) {
     return (
         <Card className="border-border/50 shadow-sm">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
@@ -65,7 +66,12 @@ export function PotsCard({ pots, onAddMoney }: Props) {
                         );
                     })
                 )}
-                <Button className="w-full mt-2" variant="outline" size="sm">
+                <Button
+                    className="w-full mt-2"
+                    variant="outline"
+                    size="sm"
+                    onClick={onCreateNew}
+                >
                     Create New Pot
                 </Button>
             </CardContent>
