@@ -62,10 +62,14 @@ export function useDeleteTransaction() {
             const response = await fetch(`${API_URL}/${id}`, {
                 method: 'DELETE',
             });
-            if (!response.ok) throw new Error('Error deleting transaction');
+            if (!response.ok) throw new Error('Failed to delete');
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['transactions'] });
+            queryClient.invalidateQueries({ queryKey: ['summary'] });
+            queryClient.invalidateQueries({ queryKey: ['categoryData'] });
+
+            toast.success('Transaction deleted and balance updated!');
         },
     });
 }

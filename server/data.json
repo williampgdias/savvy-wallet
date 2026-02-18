@@ -1,13 +1,5 @@
 {
-  "transactions": [
-    {
-      "id": "1771457202364",
-      "name": "Teste",
-      "amount": -100,
-      "category": "General",
-      "date": "2026-02-18"
-    }
-  ],
+  "transactions": [],
   "pots": [
     {
       "id": "1771442096986",
