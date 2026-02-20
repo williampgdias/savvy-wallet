@@ -1,11 +1,4 @@
 {
   "transactions": [],
-  "pots": [
-    {
-      "id": "1771442096986",
-      "name": "New Car",
-      "targetAmount": 2000,
-      "currentAmount": 1150
-    }
-  ]
+  "pots": []
 }
