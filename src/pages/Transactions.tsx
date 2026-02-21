@@ -56,7 +56,7 @@ export default function Transactions() {
                     <Skeleton className="h-96 rounded-xl" />
                 ) : (
                     <TransactionsTable
-                        transactions={transactionsResult.data ?? []}
+                        transactions={transactionsResult?.data ?? []}
                     />
                 )}
             </div>
