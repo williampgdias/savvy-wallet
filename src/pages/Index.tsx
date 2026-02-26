@@ -1,19 +1,25 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState } from 'react';
+import { Repeat } from 'lucide-react';
+import { Link } from 'react-router-dom';
+
 import { DashboardLayout } from '@/components/DashboardLayout';
 import { MonthYearFilter } from '@/components/MonthYearFilter';
 import { SummaryCards } from '@/components/SummaryCards';
 import { CategoryChart } from '@/components/CategoryChart';
 import { TransactionsTable } from '@/components/TransactionsTable';
+import { PotsCard } from '@/components/PotsCard';
+
 import { Button } from '@/components/ui/button';
+import { Skeleton } from '@/components/ui/skeleton';
+
 import {
     useTransactions,
     useSummary,
     useCategoryData,
     usePots,
 } from '@/hooks/useTransactions';
-import { Skeleton } from '@/components/ui/skeleton';
-import { PotsCard } from '@/components/PotsCard';
-import { Link } from 'react-router-dom';
+import { useRecurringBills } from '@/hooks/useRecurringBills';
 
 interface Transaction {
     id: string;
@@ -41,6 +47,8 @@ export default function Index() {
         year,
     );
     const { data: pots = [] } = usePots();
+    const { data: recurringBills, isLoading: isBillsLoading } =
+        useRecurringBills();
 
     const filteredTransactions =
         ((transactions?.data as Transaction[]) || [])?.filter(
@@ -182,6 +190,65 @@ export default function Index() {
                                 </div>
                             </>
                         )}
+                        <div className="pt-6 mt-6 border-t border-border/50">
+                            <div className="flex items-center justify-between mb-4">
+                                <h2 className="text-base font-medium text-foreground">
+                                    Upcoming Bills
+                                </h2>
+                                <Button variant="ghost">
+                                    <Link to="/recurring-bills">
+                                        View all →
+                                    </Link>
+                                </Button>
+                            </div>
+
+                            {isBillsLoading ? (
+                                <Skeleton className="h-48 rounded-xl" />
+                            ) : (
+                                <div className="bg-card border border-border/50 rounded-xl overflow-hidden">
+                                    {!recurringBills ||
+                                    recurringBills.length === 0 ? (
+                                        <div className="p-6 text-center text-sm text-muted-foreground italic">
+                                            No upcoming bills.
+                                        </div>
+                                    ) : (
+                                        <div className="divide-y divide-border/50">
+                                            {recurringBills
+                                                .slice(0, 5)
+                                                .map((bill: any) => (
+                                                    <div
+                                                        key={bill.id}
+                                                        className="flex items-center justify-between p-4 hover:bg-muted/10 transition-colors"
+                                                    >
+                                                        <div className="flex items-center gap-3">
+                                                            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-primary shrink-0">
+                                                                <Repeat className="h-4 w-4" />
+                                                            </div>
+                                                            <div>
+                                                                <p className="text-sm font-medium leading-none mb-1 text-foreground">
+                                                                    {bill.name}
+                                                                </p>
+                                                                <p className="text-xs text-muted-foreground">
+                                                                    Due on day{' '}
+                                                                    {
+                                                                        bill.dueDate
+                                                                    }
+                                                                </p>
+                                                            </div>
+                                                        </div>
+                                                        <div className="text-sm font-medium text-foreground">
+                                                            €
+                                                            {bill.amount.toFixed(
+                                                                2,
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+                        </div>
                     </div>
                 </div>
             </div>
