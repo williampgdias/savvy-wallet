@@ -112,7 +112,7 @@ export default function RecurringBills() {
                                     </tr>
                                 </thead>
 
-                                <tbody className="divide-y">
+                                <tbody className="divide-y border-t">
                                     {bills?.map((bill: any) => {
                                         const today = new Date().getDate();
                                         const daysLeft = bill.dueDate - today;
@@ -136,7 +136,7 @@ export default function RecurringBills() {
                                             statusColor =
                                                 'bg-amber-500/10 text-amber-600 border-amber-500/20 border dark:text-amber-400';
                                         } else {
-                                            statusText = `Day ${bill.dueDate}`;
+                                            statusText = 'Upcoming';
                                             statusColor =
                                                 'bg-primary/10 text-primary border-primary/20 border';
                                         }
@@ -153,14 +153,21 @@ export default function RecurringBills() {
                                                     {bill.category}
                                                 </td>
                                                 <td className="px-4 py-3">
-                                                    <span
-                                                        className={`inline-flex text-[10px] font-semibold px-2 py-0.5 rounded-full ${statusColor}`}
-                                                    >
-                                                        {statusText}
-                                                    </span>
+                                                    <div className="flex items-center gap-2">
+                                                        <span>
+                                                            Day {bill.dueDate}
+                                                        </span>
+
+                                                        {/* Color Tag */}
+                                                        <span
+                                                            className={`inline-flex text-[10px] font-semibold px-2 py-0.5 rounded-full ${statusColor}`}
+                                                        >
+                                                            {statusText}
+                                                        </span>
+                                                    </div>
                                                 </td>
                                                 <td className="px-4 py-3 text-right font-medium">
-                                                    {bill.amount.toFixed(2)}
+                                                    €{bill.amount.toFixed(2)}
                                                 </td>
                                                 <td className="px-4 py-3 text-center space-x-2">
                                                     {/* Edit Button */}
