@@ -244,6 +244,46 @@ app.post('/pots/:id/deposit', async (req, res) => {
     }
 });
 
+// Route to list all recurring bills
+app.get('/recurring-bills', async (req, res) => {
+    try {
+        const bills = await prisma.recurringBill.findMany({
+            orderBy: { dueDate: 'asc' },
+        });
+        res.json(bills);
+    } catch (error) {
+        console.error('❌ ERROR SEARCHING FOR ACCOUNTS', error);
+        res.status(500).json({ error: 'Failed to fetch recurring bills' });
+    }
+});
+
+// Route to add a new recurring bill
+app.post('/recurring-bills', async (req, res) => {
+    try {
+        const { name, amount, category, dueDate } = req.body;
+
+        if (!name || !amount || !dueDate) {
+            return res
+                .status(400)
+                .json({ error: 'Name, amount, and dueDate are required' });
+        }
+
+        const newBill = await prisma.recurringBill.create({
+            data: {
+                name: name.trim(),
+                amount: Number(amount),
+                category: category || 'Bills',
+                dueDate: Number(dueDate),
+            },
+        });
+
+        res.status(201).json(newBill);
+    } catch (error) {
+        console.error('❌ ERROR CREATING ACCOUNT:', error);
+        res.status(500).json({ error: 'Failed to create recurring bills' });
+    }
+});
+
 const PORT = 3001;
 app.listen(PORT, () =>
     console.log(`🚀 API running at http://localhost:${PORT}`),

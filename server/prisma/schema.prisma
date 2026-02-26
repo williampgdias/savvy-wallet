@@ -25,3 +25,13 @@ model Pot {
     currentAmount   Float     @default(0)
     createdAt       DateTime  @default(now())
 }
+
+model RecurringBill {
+    id          String   @id @default(uuid())
+    name        String
+    amount      Float
+    category    String
+    dueDate     Int
+    active      Boolean  @default(true)
+    createdAt   DateTime @default(now())
+}

@@ -11,6 +11,7 @@ import Import from './pages/Import';
 import NotFound from './pages/NotFound';
 import Transactions from './pages/Transactions';
 import PotsPage from './pages/Pots';
+import RecurringBills from './pages/RecurringBills';
 
 const queryClient = new QueryClient();
 
@@ -56,6 +57,14 @@ const App = () => (
                                 element={
                                     <ProtectedRoute>
                                         <PotsPage />
+                                    </ProtectedRoute>
+                                }
+                            />
+                            <Route
+                                path="/recurring-bills"
+                                element={
+                                    <ProtectedRoute>
+                                        <RecurringBills />
                                     </ProtectedRoute>
                                 }
                             />

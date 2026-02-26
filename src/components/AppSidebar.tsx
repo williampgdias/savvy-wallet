@@ -23,12 +23,12 @@ import {
     SidebarHeader,
     useSidebar,
 } from '@/components/ui/sidebar';
-import { Button } from '@/components/ui/button';
 
 const navItems = [
     { title: 'Dashboard', url: '/', icon: LayoutDashboard },
     { title: 'Transactions', url: '/transactions', icon: List },
     { title: 'Saving Pots', url: '/pots', icon: PiggyBank },
+    { title: 'Recurring Bills', url: '/recurring-bills', icon: PiggyBank },
     { title: 'Import', url: '/import', icon: Upload },
 ];
 
