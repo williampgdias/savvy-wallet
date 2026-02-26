@@ -1,14 +1,16 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState } from 'react';
 import { DashboardLayout } from '@/components/DashboardLayout';
 import { useRecurringBills } from '@/hooks/useRecurringBills';
 import { Skeleton } from '@/components/ui/skeleton';
 import { AddBillModal } from '@/components/AddBillModal';
 import { useQueryClient } from '@tanstack/react-query';
-import { Trash2 } from 'lucide-react';
+import { Trash2, Pencil } from 'lucide-react';
 
 export default function RecurringBills() {
     const { data: bills, isLoading } = useRecurringBills();
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [editingBill, setEditingBill] = useState<any>(null);
     const queryClient = useQueryClient();
 
     const handleSave = () => {
@@ -52,7 +54,10 @@ export default function RecurringBills() {
                     </div>
                     <div className="flex gap-4">
                         <button
-                            onClick={() => setIsModalOpen(true)}
+                            onClick={() => {
+                                setEditingBill(null);
+                                setIsModalOpen(true);
+                            }}
                             className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-4 py-2"
                         >
                             + Add Bill
@@ -109,7 +114,20 @@ export default function RecurringBills() {
                                             <td className="px-4 py-3 text-right font-medium">
                                                 €{bill.amount.toFixed(2)}
                                             </td>
-                                            <td className="px-4 py-3 text-center">
+                                            <td className="px-4 py-3 text-center space-x-2">
+                                                {/* Edit Button */}
+                                                <button
+                                                    onClick={() => {
+                                                        setEditingBill(bill);
+                                                        setIsModalOpen(true);
+                                                    }}
+                                                    className="text-muted-foreground hover:text-primary transition-colors p-1.5 rounded-md hover:bg-primary/10 items-center justify-center"
+                                                    title="Edit Bill"
+                                                >
+                                                    <Pencil className="h-4 w-4" />
+                                                </button>
+
+                                                {/* Delete button */}
                                                 <button
                                                     onClick={() =>
                                                         handleDelete(bill.id)
@@ -131,8 +149,12 @@ export default function RecurringBills() {
 
             <AddBillModal
                 isOpen={isModalOpen}
-                onClose={() => setIsModalOpen(false)}
+                onClose={() => {
+                    setIsModalOpen(false);
+                    setEditingBill(null);
+                }}
                 onSave={handleSave}
+                billToEdit={editingBill}
             />
         </DashboardLayout>
     );

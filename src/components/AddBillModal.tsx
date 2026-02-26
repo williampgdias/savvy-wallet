@@ -1,18 +1,39 @@
-import { useState } from 'react';
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
 
 interface AddBillModalProps {
     isOpen: boolean;
     onClose: () => void;
     onSave: () => void;
+    billToEdit?: any;
 }
 
-export function AddBillModal({ isOpen, onClose, onSave }: AddBillModalProps) {
+export function AddBillModal({
+    isOpen,
+    onClose,
+    onSave,
+    billToEdit,
+}: AddBillModalProps) {
     const [name, setName] = useState('');
     const [amount, setAmount] = useState('');
     const [category, setCategory] = useState('Entertainment');
     const [dueDate, setDueDate] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
+
+    useEffect(() => {
+        if (billToEdit) {
+            setName(billToEdit.name);
+            setAmount(billToEdit.amount.toString());
+            setCategory(billToEdit.category);
+            setDueDate(billToEdit.dueDate.toString());
+        } else {
+            setName('');
+            setAmount('');
+            setCategory('Entertainment');
+            setDueDate('');
+        }
+    }, [billToEdit, isOpen]);
 
     if (!isOpen) return null;
 
@@ -20,32 +41,29 @@ export function AddBillModal({ isOpen, onClose, onSave }: AddBillModalProps) {
         e.preventDefault();
         setIsSubmitting(true);
 
+        const url = billToEdit
+            ? `http://localhost:3001/recurring-bills/${billToEdit.id}`
+            : 'http://localhost:3001/recurring-bills';
+
+        const method = billToEdit ? 'PUT' : 'POST';
+
         try {
-            const response = await fetch(
-                'http://localhost:3001/recurring-bills',
-                {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        name,
-                        amount: Number(amount),
-                        category,
-                        dueDate: Number(dueDate),
-                    }),
-                },
-            );
+            const response = await fetch(url, {
+                method: method,
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    name,
+                    amount: Number(amount),
+                    category,
+                    dueDate: Number(dueDate),
+                }),
+            });
 
             if (response.ok) {
                 onSave();
                 onClose();
-
-                setName('');
-                setAmount('');
-                setDueDate('');
-
-                console.log('Salvo com sucesso.');
             } else {
-                alert('Error saving account!');
+                alert('Failed to save the bill!');
             }
         } catch (error) {
             console.error('Error:', error);
@@ -59,7 +77,9 @@ export function AddBillModal({ isOpen, onClose, onSave }: AddBillModalProps) {
             <div className="w-full max-w-md rounded-xl bg-card p-6 shadow-lg">
                 <div className="fex items-center justify-between mb-6">
                     <h2 className="text-lg font-semibold">
-                        Add Recurring Bill
+                        {billToEdit
+                            ? 'Edit Recurring Bill'
+                            : 'Add Recurring Bill'}
                     </h2>
                     <button
                         onClick={onClose}
@@ -79,7 +99,7 @@ export function AddBillModal({ isOpen, onClose, onSave }: AddBillModalProps) {
                             type="text"
                             value={name}
                             onChange={(e) => setName(e.target.value)}
-                            className="w-full rounded-md border bg-transparent px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                            className="w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
                         />
                     </div>
 
@@ -95,7 +115,7 @@ export function AddBillModal({ isOpen, onClose, onSave }: AddBillModalProps) {
                                 min="0"
                                 value={amount}
                                 onChange={(e) => setAmount(e.target.value)}
-                                className="w-full rounded-md border bg-transparent px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                                className="w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
                             />
                         </div>
                         <div>
@@ -109,7 +129,7 @@ export function AddBillModal({ isOpen, onClose, onSave }: AddBillModalProps) {
                                 max="31"
                                 value={dueDate}
                                 onChange={(e) => setDueDate(e.target.value)}
-                                className="w-full rounded-md border bg-transparent px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                                className="w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
                                 placeholder="1-31"
                             />
                         </div>
@@ -122,13 +142,14 @@ export function AddBillModal({ isOpen, onClose, onSave }: AddBillModalProps) {
                         <select
                             value={category}
                             onChange={(e) => setCategory(e.target.value)}
-                            className="w-full rounded-md border bg-transparent px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                            className="w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
                         >
                             <option value="Entertainment">Entertainment</option>
                             <option value="Utilities">Utilities</option>
                             <option value="Housing">Housing</option>
                             <option value="Gym & Health">Gym & Health</option>
                             <option value="Education">Education</option>
+                            <option value="Bills">Bills</option>
                         </select>
                     </div>
 
@@ -145,7 +166,11 @@ export function AddBillModal({ isOpen, onClose, onSave }: AddBillModalProps) {
                             disabled={isSubmitting}
                             className="w-full rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
                         >
-                            {isSubmitting ? 'Saving...' : 'Save Bill'}
+                            {isSubmitting
+                                ? 'Saving...'
+                                : billToEdit
+                                  ? 'Update Bill'
+                                  : 'Save Bill'}
                         </button>
                     </div>
                 </form>

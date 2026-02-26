@@ -300,6 +300,34 @@ app.delete('/recurring-bills/:id', async (req, res) => {
     }
 });
 
+app.put('/recurring-bills/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { name, amount, category, dueDate } = req.body;
+
+        if (!name || !amount || !dueDate) {
+            return res
+                .status(400)
+                .json({ error: 'Name, amount, and dueDate are required' });
+        }
+
+        const updatedBill = await prisma.recurringBill.update({
+            where: { id: id },
+            data: {
+                name: name.trim(),
+                amount: Number(amount),
+                category: category || 'Bills',
+                dueDate: Number(dueDate),
+            },
+        });
+
+        res.status(200).json(updatedBill);
+    } catch (error) {
+        console.error('❌ ERROR UPDATING ACCOUNT:', error);
+        res.status(500).json({ error: 'Failed to update recurring bill' });
+    }
+});
+
 const PORT = 3001;
 app.listen(PORT, () =>
     console.log(`🚀 API running at http://localhost:${PORT}`),
