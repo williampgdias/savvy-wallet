@@ -9,6 +9,11 @@ import { Trash2, Pencil } from 'lucide-react';
 
 export default function RecurringBills() {
     const { data: bills, isLoading } = useRecurringBills();
+    const totalAmount =
+        bills?.reduce(
+            (acc: number, bill: any) => acc + Number(bill.amount),
+            0,
+        ) || 0;
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingBill, setEditingBill] = useState<any>(null);
     const queryClient = useQueryClient();
@@ -52,7 +57,18 @@ export default function RecurringBills() {
                             Manage your monthly subscriptions and fixes costs
                         </p>
                     </div>
-                    <div className="flex gap-4">
+                    <div className="flex items-center gap-4">
+                        {/* Total box */}
+                        <div className="bg-muted/30 px-4 py-2 rounded-lg border border-border/50 text-right">
+                            <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold mb-0.5">
+                                Total Monthly
+                            </p>
+                            <p className="text-lg font-bold leading-none text-foreground mt-1">
+                                €{totalAmount.toFixed(2)}
+                            </p>
+                        </div>
+
+                        {/* Add Bill Button */}
                         <button
                             onClick={() => {
                                 setEditingBill(null);
@@ -97,49 +113,88 @@ export default function RecurringBills() {
                                 </thead>
 
                                 <tbody className="divide-y">
-                                    {bills?.map((bill: any) => (
-                                        <tr
-                                            key={bill.id}
-                                            className="hover:bg-muted/50 transition-colors"
-                                        >
-                                            <td className="px-4 py-3 font-medium">
-                                                {bill.name}
-                                            </td>
-                                            <td className="px-4 py-3">
-                                                {bill.category}
-                                            </td>
-                                            <td className="px-4 py-3">
-                                                {bill.dueDate}
-                                            </td>
-                                            <td className="px-4 py-3 text-right font-medium">
-                                                €{bill.amount.toFixed(2)}
-                                            </td>
-                                            <td className="px-4 py-3 text-center space-x-2">
-                                                {/* Edit Button */}
-                                                <button
-                                                    onClick={() => {
-                                                        setEditingBill(bill);
-                                                        setIsModalOpen(true);
-                                                    }}
-                                                    className="text-muted-foreground hover:text-primary transition-colors p-1.5 rounded-md hover:bg-primary/10 items-center justify-center"
-                                                    title="Edit Bill"
-                                                >
-                                                    <Pencil className="h-4 w-4" />
-                                                </button>
+                                    {bills?.map((bill: any) => {
+                                        const today = new Date().getDate();
+                                        const daysLeft = bill.dueDate - today;
 
-                                                {/* Delete button */}
-                                                <button
-                                                    onClick={() =>
-                                                        handleDelete(bill.id)
-                                                    }
-                                                    className="text-muted-foreground hover:text-destructive transition-colors p-1.5 rounded-md hover:bg-destructive/10 inline-flex items-center justify-center"
-                                                    title="Delete Bill"
-                                                >
-                                                    <Trash2 className="h-4 w-4" />
-                                                </button>
-                                            </td>
-                                        </tr>
-                                    ))}
+                                        let statusText = '';
+                                        let statusColor = '';
+
+                                        if (daysLeft < 0) {
+                                            statusText = 'Processed';
+                                            statusColor =
+                                                'bg-muted text-muted-foreground';
+                                        } else if (daysLeft === 0) {
+                                            statusText = 'Due Today';
+                                            statusColor =
+                                                'bg-destructive/10 text-destructive border-destructive/20 border';
+                                        } else if (
+                                            daysLeft > 0 &&
+                                            daysLeft <= 3
+                                        ) {
+                                            statusText = `In ${daysLeft} days`;
+                                            statusColor =
+                                                'bg-amber-500/10 text-amber-600 border-amber-500/20 border dark:text-amber-400';
+                                        } else {
+                                            statusText = `Day ${bill.dueDate}`;
+                                            statusColor =
+                                                'bg-primary/10 text-primary border-primary/20 border';
+                                        }
+
+                                        return (
+                                            <tr
+                                                key={bill.id}
+                                                className="hover:bg-muted/50 transition-colors"
+                                            >
+                                                <td className="px-4 py-3 font-medium">
+                                                    {bill.name}
+                                                </td>
+                                                <td className="px-4 py-3 text-muted-foreground">
+                                                    {bill.category}
+                                                </td>
+                                                <td className="px-4 py-3">
+                                                    <span
+                                                        className={`inline-flex text-[10px] font-semibold px-2 py-0.5 rounded-full ${statusColor}`}
+                                                    >
+                                                        {statusText}
+                                                    </span>
+                                                </td>
+                                                <td className="px-4 py-3 text-right font-medium">
+                                                    {bill.amount.toFixed(2)}
+                                                </td>
+                                                <td className="px-4 py-3 text-center space-x-2">
+                                                    {/* Edit Button */}
+                                                    <button
+                                                        onClick={() => {
+                                                            setEditingBill(
+                                                                bill,
+                                                            );
+                                                            setIsModalOpen(
+                                                                true,
+                                                            );
+                                                        }}
+                                                        className="text-muted-foreground hover:text-primary transition-colors p-1.5 rounded-md hover:bg-primary/10 inline-flex items-center justify-center"
+                                                        title="Edit Bill"
+                                                    >
+                                                        <Pencil className="h-4 w-4" />
+                                                    </button>
+
+                                                    {/* Delete Button */}
+                                                    <button
+                                                        onClick={() =>
+                                                            handleDelete(
+                                                                bill.id,
+                                                            )
+                                                        }
+                                                        className="text-muted-foreground hover:text-destructive transition-colors p-1.5 rounded-md hover:bg-destructive/10 inline-flex items-center justify-center"
+                                                        title="Delete Bill"
+                                                    >
+                                                        <Trash2 className="h-4 w-4" />
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        );
+                                    })}
                                 </tbody>
                             </table>
                         )}

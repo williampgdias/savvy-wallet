@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState } from 'react';
-import { Repeat } from 'lucide-react';
+import { Divide, Repeat } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 import { DashboardLayout } from '@/components/DashboardLayout';
@@ -215,35 +215,67 @@ export default function Index() {
                                         <div className="divide-y divide-border/50">
                                             {recurringBills
                                                 .slice(0, 5)
-                                                .map((bill: any) => (
-                                                    <div
-                                                        key={bill.id}
-                                                        className="flex items-center justify-between p-4 hover:bg-muted/10 transition-colors"
-                                                    >
-                                                        <div className="flex items-center gap-3">
-                                                            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-primary shrink-0">
-                                                                <Repeat className="h-4 w-4" />
+                                                .map((bill: any) => {
+                                                    const today =
+                                                        new Date().getDate();
+                                                    const daysLeft =
+                                                        bill.dueDate - today;
+
+                                                    let statusText = '';
+                                                    let statusColor = '';
+
+                                                    if (daysLeft < 0) {
+                                                        statusText =
+                                                            'Processed';
+                                                        statusColor =
+                                                            'bg-muted text-muted-foreground';
+                                                    } else if (daysLeft === 0) {
+                                                        statusText =
+                                                            'Due Today';
+                                                        statusColor =
+                                                            'bg-destructive/10 text-destructive border-destructive/20 border';
+                                                    } else if (
+                                                        daysLeft > 0 &&
+                                                        daysLeft <= 3
+                                                    ) {
+                                                        statusText = `In ${daysLeft} days`;
+                                                        statusColor =
+                                                            'bg-amber-50/10 text-amber-600 border-primary/20 border';
+                                                    }
+
+                                                    return (
+                                                        <div
+                                                            key={bill.id}
+                                                            className="flex items-center justify-between p-4 hover:bg-muted/10 transition-colors"
+                                                        >
+                                                            <div className="flex items-center gap-3">
+                                                                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-primary shrink-0">
+                                                                    <Repeat className="h-4 w-4" />
+                                                                </div>
+                                                                <div className="flex items-center space-x-3">
+                                                                    <p className="text-sm font-medium leading-none mb-1 text-foreground">
+                                                                        {
+                                                                            bill.name
+                                                                        }
+                                                                    </p>
+                                                                    <span
+                                                                        className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${statusColor}`}
+                                                                    >
+                                                                        {
+                                                                            statusText
+                                                                        }
+                                                                    </span>
+                                                                </div>
                                                             </div>
-                                                            <div>
-                                                                <p className="text-sm font-medium leading-none mb-1 text-foreground">
-                                                                    {bill.name}
-                                                                </p>
-                                                                <p className="text-xs text-muted-foreground">
-                                                                    Due on day{' '}
-                                                                    {
-                                                                        bill.dueDate
-                                                                    }
-                                                                </p>
+                                                            <div className="text-sm font-medium text-foreground">
+                                                                €
+                                                                {bill.amount.toFixed(
+                                                                    2,
+                                                                )}
                                                             </div>
                                                         </div>
-                                                        <div className="text-sm font-medium text-foreground">
-                                                            €
-                                                            {bill.amount.toFixed(
-                                                                2,
-                                                            )}
-                                                        </div>
-                                                    </div>
-                                                ))}
+                                                    );
+                                                })}
                                         </div>
                                     )}
                                 </div>
