@@ -284,6 +284,22 @@ app.post('/recurring-bills', async (req, res) => {
     }
 });
 
+// Route to delete a recurring bill
+app.delete('/recurring-bills/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        await prisma.recurringBill.delete({
+            where: { id: id },
+        });
+
+        res.status(200).json({ message: 'Bill deleted successfully' });
+    } catch (error) {
+        console.error('❌ ERROR DELETING ACCOUNT:', error);
+        res.status(500).json({ error: 'Failed to delete recurring bill' });
+    }
+});
+
 const PORT = 3001;
 app.listen(PORT, () =>
     console.log(`🚀 API running at http://localhost:${PORT}`),

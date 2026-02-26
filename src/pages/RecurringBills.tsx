@@ -4,6 +4,7 @@ import { useRecurringBills } from '@/hooks/useRecurringBills';
 import { Skeleton } from '@/components/ui/skeleton';
 import { AddBillModal } from '@/components/AddBillModal';
 import { useQueryClient } from '@tanstack/react-query';
+import { Trash2 } from 'lucide-react';
 
 export default function RecurringBills() {
     const { data: bills, isLoading } = useRecurringBills();
@@ -13,6 +14,30 @@ export default function RecurringBills() {
     const handleSave = () => {
         queryClient.invalidateQueries({ queryKey: ['recurring-bills'] });
         setIsModalOpen(false);
+    };
+
+    const handleDelete = async (id: string) => {
+        if (!window.confirm('Are you sure you want to delete this bill?'))
+            return;
+
+        try {
+            const response = await fetch(
+                `http://localhost:3001/recurring-bills/${id}`,
+                {
+                    method: 'DELETE',
+                },
+            );
+
+            if (response.ok) {
+                queryClient.invalidateQueries({
+                    queryKey: ['recurring-bills'],
+                });
+            } else {
+                alert('Failed to delete bill');
+            }
+        } catch (error) {
+            console.error('Error deleting bill:', error);
+        }
     };
 
     return (
@@ -60,6 +85,9 @@ export default function RecurringBills() {
                                         <th className="px-4 py-3 font-medium text-right">
                                             Amount
                                         </th>
+                                        <th className="px-4 py-3 font-medium text-center">
+                                            Actions
+                                        </th>
                                     </tr>
                                 </thead>
 
@@ -80,6 +108,17 @@ export default function RecurringBills() {
                                             </td>
                                             <td className="px-4 py-3 text-right font-medium">
                                                 €{bill.amount.toFixed(2)}
+                                            </td>
+                                            <td className="px-4 py-3 text-center">
+                                                <button
+                                                    onClick={() =>
+                                                        handleDelete(bill.id)
+                                                    }
+                                                    className="text-muted-foreground hover:text-destructive transition-colors p-1.5 rounded-md hover:bg-destructive/10 inline-flex items-center justify-center"
+                                                    title="Delete Bill"
+                                                >
+                                                    <Trash2 className="h-4 w-4" />
+                                                </button>
                                             </td>
                                         </tr>
                                     ))}
