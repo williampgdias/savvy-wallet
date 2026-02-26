@@ -7,6 +7,7 @@ import {
     Receipt,
     Target,
     PiggyBank,
+    Repeat,
 } from 'lucide-react';
 import { NavLink } from '@/components/NavLink';
 import { useAuth } from '@/hooks/useAuth';
@@ -28,7 +29,7 @@ const navItems = [
     { title: 'Dashboard', url: '/', icon: LayoutDashboard },
     { title: 'Transactions', url: '/transactions', icon: List },
     { title: 'Saving Pots', url: '/pots', icon: PiggyBank },
-    { title: 'Recurring Bills', url: '/recurring-bills', icon: PiggyBank },
+    { title: 'Recurring Bills', url: '/recurring-bills', icon: Repeat },
     { title: 'Import', url: '/import', icon: Upload },
 ];
 

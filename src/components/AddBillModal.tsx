@@ -75,15 +75,16 @@ export function AddBillModal({
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
             <div className="w-full max-w-md rounded-xl bg-card p-6 shadow-lg">
-                <div className="fex items-center justify-between mb-6">
+                <div className="flex flex-row items-center justify-between mb-6 w-full">
                     <h2 className="text-lg font-semibold">
                         {billToEdit
                             ? 'Edit Recurring Bill'
                             : 'Add Recurring Bill'}
                     </h2>
                     <button
+                        type="button"
                         onClick={onClose}
-                        className="rounded-full p-1 hover:bg-muted"
+                        className="rounded-full p-1 hover:bg-muted shrink-0"
                     >
                         <X className="h-5 w-5 text-muted-foreground" />
                     </button>
