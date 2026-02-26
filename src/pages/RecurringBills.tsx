@@ -47,6 +47,31 @@ export default function RecurringBills() {
         }
     };
 
+    // Function to check if is Paid or not Paid
+    const handleTogglePaid = async (bill: any) => {
+        try {
+            const response = await fetch(
+                `http://localhost:3001/recurring-bills/${bill.id}/status`,
+                {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ isPaid: !bill.isPaid }),
+                },
+            );
+
+            if (response.ok) {
+                queryClient.invalidateQueries({
+                    queryKey: ['recurring-bills'],
+                });
+                queryClient.invalidateQueries({ queryKey: ['transactions'] });
+            } else {
+                alert('Failed to update status');
+            }
+        } catch (error) {
+            console.error('Error:', error);
+        }
+    };
+
     return (
         <DashboardLayout>
             <div className="space-y-6">
@@ -120,10 +145,14 @@ export default function RecurringBills() {
                                         let statusText = '';
                                         let statusColor = '';
 
-                                        if (daysLeft < 0) {
-                                            statusText = 'Processed';
+                                        if (bill.isPaid) {
+                                            statusText = 'Paid';
                                             statusColor =
-                                                'bg-muted text-muted-foreground';
+                                                'bg-emerald-500/10 text-emerald-600 border-emerald-500/20 border dark:text-emerald-500';
+                                        } else if (daysLeft < 0) {
+                                            statusText = 'Delayed';
+                                            statusColor =
+                                                'bg-destructive/10 text-destructive border-destructive/20 border';
                                         } else if (daysLeft === 0) {
                                             statusText = 'Due Today';
                                             statusColor =
@@ -147,7 +176,29 @@ export default function RecurringBills() {
                                                 className="hover:bg-muted/50 transition-colors"
                                             >
                                                 <td className="px-4 py-3 font-medium">
-                                                    {bill.name}
+                                                    <div className="flex items-center gap-3">
+                                                        <input
+                                                            type="checkbox"
+                                                            checked={
+                                                                bill.isPaid
+                                                            }
+                                                            onChange={() =>
+                                                                handleTogglePaid(
+                                                                    bill,
+                                                                )
+                                                            }
+                                                            className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary cursor-pointer"
+                                                        />
+                                                        <span
+                                                            className={
+                                                                bill.isPaid
+                                                                    ? 'line-through text-muted-foreground'
+                                                                    : ''
+                                                            }
+                                                        >
+                                                            {bill.name}
+                                                        </span>
+                                                    </div>
                                                 </td>
                                                 <td className="px-4 py-3 text-muted-foreground">
                                                     {bill.category}

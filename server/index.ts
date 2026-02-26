@@ -300,6 +300,7 @@ app.delete('/recurring-bills/:id', async (req, res) => {
     }
 });
 
+// Route to edit a recurring bill
 app.put('/recurring-bills/:id', async (req, res) => {
     try {
         const { id } = req.params;
@@ -325,6 +326,47 @@ app.put('/recurring-bills/:id', async (req, res) => {
     } catch (error) {
         console.error('❌ ERROR UPDATING ACCOUNT:', error);
         res.status(500).json({ error: 'Failed to update recurring bill' });
+    }
+});
+
+// Route to toggle the "Paid" status and auto-create a transaction
+app.put('/recurring-bills/:id/status', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const isPaid = req.body?.isPaid;
+
+        if (isPaid === undefined) {
+            return res.status(400).json({ error: 'Missing isPaid in request' });
+        }
+
+        const bill = await prisma.recurringBill.findUnique({
+            where: { id: id },
+        });
+
+        if (!bill) {
+            return res.status(404).json({ error: 'Bill not found' });
+        }
+
+        const updatedBill = await prisma.recurringBill.update({
+            where: { id: id },
+            data: { isPaid: isPaid },
+        });
+
+        if (isPaid === true) {
+            await prisma.transaction.create({
+                data: {
+                    name: `[Bill] ${bill.name}`,
+                    amount: -bill.amount,
+                    category: bill.category,
+                    date: new Date(),
+                },
+            });
+        }
+
+        res.status(200).json(updatedBill);
+    } catch (error) {
+        console.error('❌ ERROR CHANGING ACCOUNT STATUS:', error);
+        res.status(500).json({ error: 'Failed to update bill status' });
     }
 });
 
