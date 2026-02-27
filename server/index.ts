@@ -376,7 +376,7 @@ app.put('/recurring-bills/:id/status', async (req, res) => {
 // Route do AI Advisor (Gemini)
 app.post('/api/advisor', async (req, res) => {
     try {
-        const { question } = req.body;
+        const { question, history } = req.body;
 
         if (!question) {
             return res.status(400).json({ error: 'Please ask a question.' });
@@ -396,30 +396,42 @@ app.post('/api/advisor', async (req, res) => {
             0,
         );
 
+        const conversationHistory =
+            history && history.length > 0
+                ? history
+                      .map(
+                          (msg: any) =>
+                              `${msg.role === 'user' ? 'User' : 'Advisor'}: ${msg.text}`,
+                      )
+                      .join('\n')
+                : 'No previous messages.';
+
         const systemContext = `
-        You are a rigorous, and highly intelligent personal financial advisor.
+        You are a rigorous, polite, and highly intelligent personal financial advisor.
         The user is asking you for financial advice.
         
         Here is the user's current financial reality (in Euros):
         - Current Balance: €${currentBalance.toFixed(2)}
-        - Total Upcoming Fixed Bills to pay this month: €${totalPendingBills.toFixed(2)}
+        - Upcoming Fixed Bills this month: €${totalPendingBills.toFixed(2)}
         - Available Money (Balance - Bills): €${(currentBalance - totalPendingBills).toFixed(2)}
 
         Rules for your answer:
         1. Be direct, clear, and really professional.
-        2. If the user wants to buy something and their "Available Money' is too low or negative, scold them gently and advice against it.
-        3. If they have enough money, tell them it's okay but remind them to save.
-        4. Keep the answer under 4 paragraphs. Do not use markdown headers, just plain text with some emojis.
+        2. Reply in the same language the user speaks.
+        3. Keep the answer under 3 paragraphs. Plain text only, with emojis.
 
-        User's question: "${question}"
+        --- PREVIOUS CONVERSATION HISTORY ---
+        ${conversationHistory}
+        -------------------------------------
+
+        User's NEW question: "${question}"
         `;
 
         const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
 
         const result = await model.generateContent(systemContext);
-        const responseText = result.response.text();
 
-        res.status(200).json({ answer: responseText });
+        res.status(200).json({ answer: result.response.text() });
     } catch (error) {
         console.error('❌ GEMINI ERROR:', error);
         res.status(500).json({ error: 'Failed to consult the AI Advisor.' });

@@ -36,7 +36,9 @@ export default function Index() {
     const [selectedCategory, setSelectedCategory] = useState<string>('All');
     const [page, setPage] = useState(1);
     const [aiQuestion, setAiQuestion] = useState('');
-    const [aiAnswer, setAiAnswer] = useState('');
+    const [chatHistory, setChatHistory] = useState<
+        { role: 'user' | 'ai'; text: string }[]
+    >([]);
     const [isAskingAI, setIsAskingAI] = useState(false);
 
     const { data: transactions, isLoading: isTransactionsLoading } =
@@ -59,34 +61,50 @@ export default function Index() {
                 selectedCategory === 'All' || t.category === selectedCategory,
         ) ?? [];
 
-    const handleAskAi = async () => {
+    const handleAskAI = async () => {
         if (!aiQuestion.trim()) return;
 
+        const newQuestion = aiQuestion;
+        const currentHistory = [...chatHistory];
+
+        setChatHistory((prev) => [
+            ...prev,
+            { role: 'user', text: newQuestion },
+        ]);
+        setAiQuestion('');
         setIsAskingAI(true);
-        setAiAnswer('');
 
         try {
             const response = await fetch('http://localhost:3001/api/advisor', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ question: aiQuestion }),
+                body: JSON.stringify({
+                    question: newQuestion,
+                    history: currentHistory,
+                }),
             });
 
             const data = await response.json();
 
             if (response.ok) {
-                setAiAnswer(data.answer);
+                setChatHistory((prev) => [
+                    ...prev,
+                    { role: 'ai', text: data.answer },
+                ]);
             } else {
-                setAiAnswer(
-                    'Oops! I think my brain is offline. Try again later.',
-                );
+                setChatHistory((prev) => [
+                    ...prev,
+                    { role: 'ai', text: 'Oops! My brain is offline.' },
+                ]);
             }
         } catch (error) {
             console.error(error);
-            setAiAnswer('Error connecting to the AI Advisor.');
+            setChatHistory((prev) => [
+                ...prev,
+                { role: 'ai', text: 'Error connecting to the AI Advisor.' },
+            ]);
         } finally {
             setIsAskingAI(false);
-            setAiQuestion('');
         }
     };
 
@@ -126,7 +144,7 @@ export default function Index() {
                 )}
 
                 {/* AI Advisor starts */}
-                <div className="bg-gradient-to-br from-primary/10 via-background to-background border border-primary/20 rounded-xl overflow-hidden mb-6 shadow-sm">
+                <div className="bg-gradient-to-br from-primary/10 via-background to-background border border-primary/20 rounded-xl overflow-hidden mb-6 shadow-sm transition-all duration-300">
                     <div className="p-5 border-b border-border/50 bg-card/50 flex items-center gap-3">
                         <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/20 text-primary">
                             <Bot className="h-5 w-5" />
@@ -142,38 +160,62 @@ export default function Index() {
                         </div>
                     </div>
 
-                    <div className="p-5 space-y-4">
-                        {isAskingAI && (
-                            <div className="bg-muted/50 rounded-lg p-4 text-sm text-muted-foreground animate-pulse border border-border/50">
-                                Analyzing your balance and bills...
+                    <div className="p-4">
+                        {(chatHistory.length > 0 || isAskingAI) && (
+                            <div className="h-[280px] overflow-y-auto pr-2 space-y-4 flex flex-col mb-4">
+                                {chatHistory.map((msg, index) => (
+                                    <div
+                                        key={index}
+                                        className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
+                                    >
+                                        <div
+                                            className={`max-w-[85%] rounded-2xl p-3 text-sm ${
+                                                msg.role === 'user'
+                                                    ? 'bg-primary text-primary-foreground rounded-br-sm'
+                                                    : 'bg-muted/70 text-foreground border border-border/50 rounded-bl-sm whitespace-pre-wrap'
+                                            }`}
+                                        >
+                                            {msg.text}
+                                        </div>
+                                    </div>
+                                ))}
+
+                                {isAskingAI && (
+                                    <div className="flex justify-start">
+                                        <div className="bg-muted/70 text-muted-foreground border border-border/50 rounded-2xl rounded-bl-sm p-3 text-sm animate-pulse flex gap-1">
+                                            <span className="h-1.5 w-1.5 bg-current rounded-full animate-bounce"></span>
+                                            <span className="h-1.5 w-1.5 bg-current rounded-full animate-bounce delay-75"></span>
+                                            <span className="h-1.5 w-1.5 bg-current rounded-full animate-bounce delay-150"></span>
+                                        </div>
+                                    </div>
+                                )}
                             </div>
                         )}
 
-                        {!isAskingAI && aiAnswer && (
-                            <div className="bg-primary/5 rounded-lg p-4 text-sm text-foreground border border-primary/10 leading-relaxed whitespace-pre-wrap">
-                                {aiAnswer}
-                            </div>
-                        )}
-
-                        {/* Questions area */}
+                        {/* INPUT */}
                         <div className="flex gap-2">
                             <input
                                 type="text"
                                 value={aiQuestion}
                                 onChange={(e) => setAiQuestion(e.target.value)}
                                 onKeyDown={(e) =>
-                                    e.key === 'Enter' && handleAskAi()
+                                    e.key === 'Enter' && handleAskAI()
                                 }
-                                placeholder="Ex: Can I buy a €500 PS5 this month?"
-                                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus:visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 flex-1"
+                                // O placeholder muda pra te incentivar se o chat estiver vazio!
+                                placeholder={
+                                    chatHistory.length === 0
+                                        ? 'Ex: Do I have any bills to pay this week?'
+                                        : 'Type your message...'
+                                }
+                                className="flex h-10 w-full rounded-full border border-input bg-background px-4 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 flex-1"
+                                disabled={isAskingAI}
                             />
-
                             <button
-                                onClick={handleAskAi}
+                                onClick={handleAskAI}
                                 disabled={isAskingAI || !aiQuestion.trim()}
-                                className="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-4 py-2 shrink-0"
+                                className="inline-flex items-center justify-center rounded-full bg-primary text-primary-foreground hover:bg-primary/90 h-10 w-10 shrink-0 transition-transform active:scale-95 disabled:opacity-50"
                             >
-                                <Send className="h-4 w-4" />
+                                <Send className="h-4 w-4 ml-[-2px]" />
                             </button>
                         </div>
                     </div>
