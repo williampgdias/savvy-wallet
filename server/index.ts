@@ -1,13 +1,16 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
 import { PrismaBetterSqlite3 } from '@prisma/adapter-better-sqlite3';
 import { PrismaClient } from '@prisma/client';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 
 const app = express();
 
 const adapter = new PrismaBetterSqlite3({ url: 'file:./prisma/dev.db' });
 const prisma = new PrismaClient({ adapter });
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
 
 app.use(cors());
 app.use(express.json());
@@ -367,6 +370,59 @@ app.put('/recurring-bills/:id/status', async (req, res) => {
     } catch (error) {
         console.error('❌ ERROR CHANGING ACCOUNT STATUS:', error);
         res.status(500).json({ error: 'Failed to update bill status' });
+    }
+});
+
+// Route do AI Advisor (Gemini)
+app.post('/api/advisor', async (req, res) => {
+    try {
+        const { question } = req.body;
+
+        if (!question) {
+            return res.status(400).json({ error: 'Please ask a question.' });
+        }
+
+        const transactions = await prisma.transaction.findMany();
+        const currentBalance = transactions.reduce(
+            (acc, curr) => acc + curr.amount,
+            0,
+        );
+
+        const pendingBills = await prisma.recurringBill.findMany({
+            where: { isPaid: false },
+        });
+        const totalPendingBills = pendingBills.reduce(
+            (acc, curr) => acc + curr.amount,
+            0,
+        );
+
+        const systemContext = `
+        You are a rigorous, and highly intelligent personal financial advisor.
+        The user is asking you for financial advice.
+        
+        Here is the user's current financial reality (in Euros):
+        - Current Balance: €${currentBalance.toFixed(2)}
+        - Total Upcoming Fixed Bills to pay this month: €${totalPendingBills.toFixed(2)}
+        - Available Money (Balance - Bills): €${(currentBalance - totalPendingBills).toFixed(2)}
+
+        Rules for your answer:
+        1. Be direct, clear, and really professional.
+        2. If the user wants to buy something and their "Available Money' is too low or negative, scold them gently and advice against it.
+        3. If they have enough money, tell them it's okay but remind them to save.
+        4. Keep the answer under 4 paragraphs. Do not use markdown headers, just plain text with some emojis.
+
+        User's question: "${question}"
+        `;
+
+        const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
+
+        const result = await model.generateContent(systemContext);
+        const responseText = result.response.text();
+
+        res.status(200).json({ answer: responseText });
+    } catch (error) {
+        console.error('❌ GEMINI ERROR:', error);
+        res.status(500).json({ error: 'Failed to consult the AI Advisor.' });
     }
 });
 

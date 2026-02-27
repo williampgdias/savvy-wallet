@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState } from 'react';
-import { Divide, Repeat } from 'lucide-react';
+import { Repeat, Bot, Send, Sparkles } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 import { DashboardLayout } from '@/components/DashboardLayout';
@@ -35,6 +35,9 @@ export default function Index() {
     const [year, setYear] = useState(now.getFullYear());
     const [selectedCategory, setSelectedCategory] = useState<string>('All');
     const [page, setPage] = useState(1);
+    const [aiQuestion, setAiQuestion] = useState('');
+    const [aiAnswer, setAiAnswer] = useState('');
+    const [isAskingAI, setIsAskingAI] = useState(false);
 
     const { data: transactions, isLoading: isTransactionsLoading } =
         useTransactions(month, year, page);
@@ -55,6 +58,37 @@ export default function Index() {
             (t) =>
                 selectedCategory === 'All' || t.category === selectedCategory,
         ) ?? [];
+
+    const handleAskAi = async () => {
+        if (!aiQuestion.trim()) return;
+
+        setIsAskingAI(true);
+        setAiAnswer('');
+
+        try {
+            const response = await fetch('http://localhost:3001/api/advisor', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ question: aiQuestion }),
+            });
+
+            const data = await response.json();
+
+            if (response.ok) {
+                setAiAnswer(data.answer);
+            } else {
+                setAiAnswer(
+                    'Oops! I think my brain is offline. Try again later.',
+                );
+            }
+        } catch (error) {
+            console.error(error);
+            setAiAnswer('Error connecting to the AI Advisor.');
+        } finally {
+            setIsAskingAI(false);
+            setAiQuestion('');
+        }
+    };
 
     return (
         <DashboardLayout>
@@ -91,13 +125,68 @@ export default function Index() {
                     />
                 )}
 
+                {/* AI Advisor starts */}
+                <div className="bg-gradient-to-br from-primary/10 via-background to-background border border-primary/20 rounded-xl overflow-hidden mb-6 shadow-sm">
+                    <div className="p-5 border-b border-border/50 bg-card/50 flex items-center gap-3">
+                        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/20 text-primary">
+                            <Bot className="h-5 w-5" />
+                        </div>
+                        <div>
+                            <h2 className="text-base font-semibold text-foreground flex items-center gap-2">
+                                AI Financial Advisor{' '}
+                                <Sparkles className="h-3 w-3 text-amber-500" />
+                            </h2>
+                            <p className="text-xs text-muted-foreground">
+                                Ask me anything about your finances.
+                            </p>
+                        </div>
+                    </div>
+
+                    <div className="p-5 space-y-4">
+                        {isAskingAI && (
+                            <div className="bg-muted/50 rounded-lg p-4 text-sm text-muted-foreground animate-pulse border border-border/50">
+                                Analyzing your balance and bills...
+                            </div>
+                        )}
+
+                        {!isAskingAI && aiAnswer && (
+                            <div className="bg-primary/5 rounded-lg p-4 text-sm text-foreground border border-primary/10 leading-relaxed whitespace-pre-wrap">
+                                {aiAnswer}
+                            </div>
+                        )}
+
+                        {/* Questions area */}
+                        <div className="flex gap-2">
+                            <input
+                                type="text"
+                                value={aiQuestion}
+                                onChange={(e) => setAiQuestion(e.target.value)}
+                                onKeyDown={(e) =>
+                                    e.key === 'Enter' && handleAskAi()
+                                }
+                                placeholder="Ex: Can I buy a €500 PS5 this month?"
+                                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus:visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 flex-1"
+                            />
+
+                            <button
+                                onClick={handleAskAi}
+                                disabled={isAskingAI || !aiQuestion.trim()}
+                                className="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-4 py-2 shrink-0"
+                            >
+                                <Send className="h-4 w-4" />
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                {/* AI Advisor finishes */}
+
                 <div className="grid gap-6 lg:grid-cols-2">
                     {isChartLoading ? (
                         <Skeleton className="h-[300px] w-full rounded-xl" />
                     ) : (
                         <div className="space-y-6">
                             <CategoryChart data={chartData ?? []} />
-                            {/* <PotsCard pot={pots[0]} /> */}
                             {/* POTS */}
                             <div className="bg-card border border-border/50 rounded-xl p-6 space-y-6">
                                 <h2 className="text-base font-medium">
@@ -190,6 +279,8 @@ export default function Index() {
                                 </div>
                             </>
                         )}
+
+                        {/* Upcoming Bills container */}
                         <div className="pt-6 mt-6 border-t border-border/50">
                             <div className="flex items-center justify-between mb-4">
                                 <h2 className="text-base font-medium text-foreground">
