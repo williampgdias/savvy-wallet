@@ -1,33 +1,36 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import useApi from './useApi';
 import { toast } from 'sonner';
 
 const API_URL = 'http://localhost:3001/transactions';
 
 export function useTransactions(month: number, year: number, page: number = 1) {
+    const { fetchWithAuth } = useApi();
+
     return useQuery({
         queryKey: ['transactions', month, year, page],
         queryFn: async () => {
-            const response = await fetch(
-                `${API_URL}?month=${month}&year=${year}&page=${page}&limit=5`,
+            const response = await fetchWithAuth(
+                `/transactions?month=${month}&year=${year}&page=${page}&limit=5`,
             );
             if (!response.ok)
                 throw new Error(
                     'Error retrieving transactions from the server.',
                 );
-
-            const result = await response.json();
-            return result;
+            return response.json();
         },
     });
 }
 
 export function useSummary(month: number, year: number) {
+    const { fetchWithAuth } = useApi();
+
     return useQuery({
         queryKey: ['summary', month, year],
         queryFn: async () => {
-            const response = await fetch(
-                `http://localhost:3001/transactions/summary?month=${month}&year=${year}`,
+            const response = await fetchWithAuth(
+                `/transactions/summary?month=${month}&year=${year}`,
             );
             if (!response.ok) throw new Error('Error retrieving summary.');
             return response.json();
@@ -36,14 +39,14 @@ export function useSummary(month: number, year: number) {
 }
 
 export function useInsertTransactions() {
+    const { fetchWithAuth } = useApi();
     const queryClient = useQueryClient();
 
     return useMutation({
         mutationFn: async (transactions: any[]) => {
             for (const t of transactions) {
-                await fetch(API_URL, {
+                await fetchWithAuth('/transactions', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(t),
                 });
             }
@@ -55,11 +58,12 @@ export function useInsertTransactions() {
 }
 
 export function useDeleteTransaction() {
+    const { fetchWithAuth } = useApi();
     const queryClient = useQueryClient();
 
     return useMutation({
         mutationFn: async (id: string) => {
-            const response = await fetch(`${API_URL}/${id}`, {
+            const response = await fetchWithAuth(`/transactions/${id}`, {
                 method: 'DELETE',
             });
             if (!response.ok) throw new Error('Failed to delete');
@@ -67,19 +71,20 @@ export function useDeleteTransaction() {
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['transactions'] });
             queryClient.invalidateQueries({ queryKey: ['summary'] });
-            queryClient.invalidateQueries({ queryKey: ['categoryData'] });
-
+            queryClient.invalidateQueries({ queryKey: ['categories'] });
             toast.success('Transaction deleted and balance updated!');
         },
     });
 }
 
 export function useCategoryData(month: number, year: number) {
+    const { fetchWithAuth } = useApi();
+
     return useQuery({
         queryKey: ['categories', month, year],
         queryFn: async () => {
-            const response = await fetch(
-                `http://localhost:3001/transactions/categories?month=${month}&year=${year}`,
+            const response = await fetchWithAuth(
+                `/transactions/categories?month=${month}&year=${year}`,
             );
             if (!response.ok)
                 throw new Error('Error retrieving data from the categories.');
@@ -89,10 +94,12 @@ export function useCategoryData(month: number, year: number) {
 }
 
 export function usePots() {
+    const { fetchWithAuth } = useApi();
+
     return useQuery({
         queryKey: ['pots'],
         queryFn: async () => {
-            const response = await fetch('http://localhost:3001/pots');
+            const response = await fetchWithAuth('/pots');
             if (!response.ok) throw new Error('Error searching for pots');
             return response.json();
         },
@@ -100,13 +107,13 @@ export function usePots() {
 }
 
 export function useCreatePot() {
+    const { fetchWithAuth } = useApi();
     const queryClient = useQueryClient();
 
     return useMutation({
         mutationFn: async (newPot: { name: string; targetAmount: number }) => {
-            const response = await fetch('http://localhost:3001/pots', {
+            const response = await fetchWithAuth('/pots', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(newPot),
             });
             if (!response.ok) throw new Error('Failed to create pot');
@@ -123,10 +130,12 @@ export function useCreatePot() {
 }
 
 export function useDeletePot() {
+    const { fetchWithAuth } = useApi();
     const queryClient = useQueryClient();
+
     return useMutation({
         mutationFn: async (id: string) => {
-            await fetch(`http://localhost:3001/pots/${id}`, {
+            await fetchWithAuth(`/pots/${id}`, {
                 method: 'DELETE',
             });
         },
@@ -138,17 +147,15 @@ export function useDeletePot() {
 }
 
 export function useDepositPot() {
+    const { fetchWithAuth } = useApi();
     const queryClient = useQueryClient();
+
     return useMutation({
         mutationFn: async ({ id, amount }: { id: string; amount: number }) => {
-            const response = await fetch(
-                `http://localhost:3001/pots/${id}/deposit`,
-                {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ amount }),
-                },
-            );
+            const response = await fetchWithAuth(`/pots/${id}/deposit`, {
+                method: 'POST',
+                body: JSON.stringify({ amount }),
+            });
             return response.json();
         },
         onSuccess: () => {

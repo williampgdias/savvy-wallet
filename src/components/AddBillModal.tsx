@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
+import useApi from '@/hooks/useApi';
 
 interface AddBillModalProps {
     isOpen: boolean;
@@ -15,6 +16,7 @@ export function AddBillModal({
     onSave,
     billToEdit,
 }: AddBillModalProps) {
+    const { fetchWithAuth } = useApi();
     const [name, setName] = useState('');
     const [amount, setAmount] = useState('');
     const [category, setCategory] = useState('Entertainment');
@@ -41,16 +43,15 @@ export function AddBillModal({
         e.preventDefault();
         setIsSubmitting(true);
 
-        const url = billToEdit
-            ? `http://localhost:3001/recurring-bills/${billToEdit.id}`
-            : 'http://localhost:3001/recurring-bills';
+        const path = billToEdit
+            ? `/recurring-bills/${billToEdit.id}`
+            : '/recurring-bills';
 
         const method = billToEdit ? 'PUT' : 'POST';
 
         try {
-            const response = await fetch(url, {
+            const response = await fetchWithAuth(path, {
                 method: method,
-                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     name,
                     amount: Number(amount),

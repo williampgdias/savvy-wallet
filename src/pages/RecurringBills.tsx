@@ -6,8 +6,10 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { AddBillModal } from '@/components/AddBillModal';
 import { useQueryClient } from '@tanstack/react-query';
 import { Trash2, Pencil } from 'lucide-react';
+import useApi from '@/hooks/useApi';
 
 export default function RecurringBills() {
+    const { fetchWithAuth } = useApi();
     const { data: bills, isLoading } = useRecurringBills();
     const totalAmount =
         bills?.reduce(
@@ -28,12 +30,9 @@ export default function RecurringBills() {
             return;
 
         try {
-            const response = await fetch(
-                `http://localhost:3001/recurring-bills/${id}`,
-                {
-                    method: 'DELETE',
-                },
-            );
+            const response = await fetchWithAuth(`/recurring-bills/${id}`, {
+                method: 'DELETE',
+            });
 
             if (response.ok) {
                 queryClient.invalidateQueries({
@@ -50,8 +49,8 @@ export default function RecurringBills() {
     // Function to check if is Paid or not Paid
     const handleTogglePaid = async (bill: any) => {
         try {
-            const response = await fetch(
-                `http://localhost:3001/recurring-bills/${bill.id}/status`,
+            const response = await fetchWithAuth(
+                `/recurring-bills/${bill.id}/status`,
                 {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },

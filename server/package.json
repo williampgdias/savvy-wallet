@@ -11,6 +11,7 @@
     "author": "",
     "license": "ISC",
     "dependencies": {
+        "@clerk/express": "^1.7.76",
         "@google/generative-ai": "^0.24.1",
         "@prisma/adapter-better-sqlite3": "^7.4.1",
         "@prisma/client": "^7.4.1",

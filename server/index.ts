@@ -2,6 +2,7 @@
 import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
+import { clerkMiddleware, requireAuth, getAuth } from '@clerk/express';
 import { PrismaBetterSqlite3 } from '@prisma/adapter-better-sqlite3';
 import { PrismaClient } from '@prisma/client';
 import { GoogleGenerativeAI } from '@google/generative-ai';
@@ -14,6 +15,7 @@ const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
 
 app.use(cors());
 app.use(express.json());
+app.use(clerkMiddleware());
 
 const getMonthDateRange = (month: string, year: string) => {
     const m = Number(month);
@@ -24,8 +26,10 @@ const getMonthDateRange = (month: string, year: string) => {
 };
 
 // Route to list transactions
-app.get('/transactions', async (req, res) => {
+app.get('/transactions', requireAuth(), async (req, res) => {
     try {
+        const userId = getAuth(req).userId as string;
+
         const { month, year, page = 1, limit = 5 } = req.query;
         const { startDate, endDate } = getMonthDateRange(
             month as string,
@@ -33,6 +37,7 @@ app.get('/transactions', async (req, res) => {
         );
 
         const where = {
+            userId: userId,
             date: {
                 gte: startDate,
                 lt: endDate,
@@ -59,8 +64,10 @@ app.get('/transactions', async (req, res) => {
 });
 
 // Route to Dashboard Summary
-app.get('/transactions/summary', async (req, res) => {
+app.get('/transactions/summary', requireAuth(), async (req, res) => {
     try {
+        const userId = getAuth(req).userId as string;
+
         const { month, year } = req.query;
         const { startDate, endDate } = getMonthDateRange(
             month as string,
@@ -68,7 +75,10 @@ app.get('/transactions/summary', async (req, res) => {
         );
 
         const transactions = await prisma.transaction.findMany({
-            where: { date: { gte: startDate, lt: endDate } },
+            where: {
+                userId: userId,
+                date: { gte: startDate, lt: endDate },
+            },
         });
 
         const income = transactions
@@ -91,8 +101,10 @@ app.get('/transactions/summary', async (req, res) => {
 });
 
 // Route Categories
-app.get('/transactions/categories', async (req, res) => {
+app.get('/transactions/categories', requireAuth(), async (req, res) => {
     try {
+        const userId = getAuth(req).userId as string;
+
         const { month, year } = req.query;
         const { startDate, endDate } = getMonthDateRange(
             month as string,
@@ -101,6 +113,7 @@ app.get('/transactions/categories', async (req, res) => {
 
         const expenses = await prisma.transaction.findMany({
             where: {
+                userId: userId,
                 date: { gte: startDate, lt: endDate },
                 amount: { lt: 0 },
             },
@@ -126,9 +139,11 @@ app.get('/transactions/categories', async (req, res) => {
 });
 
 // Fetch the pots
-app.get('/pots', async (req, res) => {
+app.get('/pots', requireAuth(), async (req, res) => {
     try {
+        const userId = getAuth(req).userId as string;
         const pots = await prisma.pot.findMany({
+            where: { userId: userId },
             orderBy: { createdAt: 'asc' },
         });
         res.json(pots);
@@ -138,8 +153,9 @@ app.get('/pots', async (req, res) => {
 });
 
 // Create a new pot
-app.post('/pots', async (req, res) => {
+app.post('/pots', requireAuth(), async (req, res) => {
     try {
+        const userId = getAuth(req).userId as string;
         const { name, targetAmount } = req.body;
 
         if (!name || !targetAmount) {
@@ -150,6 +166,7 @@ app.post('/pots', async (req, res) => {
 
         const newPot = await prisma.pot.create({
             data: {
+                userId: userId,
                 name,
                 targetAmount: Number(targetAmount),
                 currentAmount: 0,
@@ -163,9 +180,11 @@ app.post('/pots', async (req, res) => {
 });
 
 // Route to Add a new transaction
-app.post('/transactions', async (req, res) => {
+app.post('/transactions', requireAuth(), async (req, res) => {
     try {
+        const userId = getAuth(req).userId as string;
         const { name, amount, category, date } = req.body;
+
         if (!name || name.trim() === '')
             return res.status(400).json({ error: 'Description is required' });
 
@@ -178,6 +197,7 @@ app.post('/transactions', async (req, res) => {
 
         const newTransaction = await prisma.transaction.create({
             data: {
+                userId: userId,
                 name: name.trim(),
                 amount: numericAmount,
                 category: category || 'General',
@@ -192,10 +212,11 @@ app.post('/transactions', async (req, res) => {
 });
 
 // Route to delete the transaction
-app.delete('/transactions/:id', async (req, res) => {
+app.delete('/transactions/:id', requireAuth(), async (req, res) => {
     try {
-        await prisma.transaction.delete({
-            where: { id: req.params.id },
+        const userId = getAuth(req).userId as string;
+        await prisma.transaction.deleteMany({
+            where: { id: req.params.id as string, userId: userId },
         });
         res.status(204).send();
     } catch (error) {
@@ -204,10 +225,11 @@ app.delete('/transactions/:id', async (req, res) => {
 });
 
 // Route to delete a Pot
-app.delete('/pots/:id', async (req, res) => {
+app.delete('/pots/:id', requireAuth(), async (req, res) => {
     try {
-        await prisma.pot.delete({
-            where: { id: req.params.id },
+        const userId = getAuth(req).userId as string;
+        await prisma.pot.deleteMany({
+            where: { id: req.params.id as string, userId: userId },
         });
         res.status(204).send();
     } catch (error) {
@@ -216,24 +238,29 @@ app.delete('/pots/:id', async (req, res) => {
 });
 
 // Route to add money to the Pot and create the transaction
-app.post('/pots/:id/deposit', async (req, res) => {
+app.post('/pots/:id/deposit', requireAuth(), async (req, res) => {
     try {
+        const userId = getAuth(req).userId as string;
         const { id } = req.params;
         const { amount } = req.body;
         const depositAmount = Number(amount);
 
-        const pot = await prisma.pot.findUnique({ where: { id } });
-        if (!pot) return res.status(404).json({ error: 'Pot not found' });
+        const pot = await prisma.pot.findFirst({
+            where: { id: id as string, userId: userId },
+        });
+        if (!pot)
+            return res
+                .status(404)
+                .json({ error: 'Pot not found or unauthorized' });
 
         const updatedPot = await prisma.pot.update({
             where: { id },
-            data: {
-                currentAmount: { increment: depositAmount },
-            },
+            data: { currentAmount: { increment: depositAmount } },
         });
 
         const newTransaction = await prisma.transaction.create({
             data: {
+                userId: userId,
                 name: `Saving:${pot.name}`,
                 amount: -depositAmount,
                 category: 'Savings',
@@ -248,21 +275,23 @@ app.post('/pots/:id/deposit', async (req, res) => {
 });
 
 // Route to list all recurring bills
-app.get('/recurring-bills', async (req, res) => {
+app.get('/recurring-bills', requireAuth(), async (req, res) => {
     try {
+        const userId = getAuth(req).userId as string;
         const bills = await prisma.recurringBill.findMany({
+            where: { userId: userId },
             orderBy: { dueDate: 'asc' },
         });
         res.json(bills);
     } catch (error) {
-        console.error('❌ ERROR SEARCHING FOR ACCOUNTS', error);
         res.status(500).json({ error: 'Failed to fetch recurring bills' });
     }
 });
 
 // Route to add a new recurring bill
-app.post('/recurring-bills', async (req, res) => {
+app.post('/recurring-bills', requireAuth(), async (req, res) => {
     try {
+        const userId = getAuth(req).userId as string;
         const { name, amount, category, dueDate } = req.body;
 
         if (!name || !amount || !dueDate) {
@@ -273,6 +302,7 @@ app.post('/recurring-bills', async (req, res) => {
 
         const newBill = await prisma.recurringBill.create({
             data: {
+                userId: userId,
                 name: name.trim(),
                 amount: Number(amount),
                 category: category || 'Bills',
@@ -282,30 +312,27 @@ app.post('/recurring-bills', async (req, res) => {
 
         res.status(201).json(newBill);
     } catch (error) {
-        console.error('❌ ERROR CREATING ACCOUNT:', error);
         res.status(500).json({ error: 'Failed to create recurring bills' });
     }
 });
 
 // Route to delete a recurring bill
-app.delete('/recurring-bills/:id', async (req, res) => {
+app.delete('/recurring-bills/:id', requireAuth(), async (req, res) => {
     try {
-        const { id } = req.params;
-
-        await prisma.recurringBill.delete({
-            where: { id: id },
+        const userId = getAuth(req).userId as string;
+        await prisma.recurringBill.deleteMany({
+            where: { id: req.params.id as string, userId: userId },
         });
-
         res.status(200).json({ message: 'Bill deleted successfully' });
     } catch (error) {
-        console.error('❌ ERROR DELETING ACCOUNT:', error);
         res.status(500).json({ error: 'Failed to delete recurring bill' });
     }
 });
 
 // Route to edit a recurring bill
-app.put('/recurring-bills/:id', async (req, res) => {
+app.put('/recurring-bills/:id', requireAuth(), async (req, res) => {
     try {
+        const userId = getAuth(req).userId as string;
         const { id } = req.params;
         const { name, amount, category, dueDate } = req.body;
 
@@ -315,8 +342,8 @@ app.put('/recurring-bills/:id', async (req, res) => {
                 .json({ error: 'Name, amount, and dueDate are required' });
         }
 
-        const updatedBill = await prisma.recurringBill.update({
-            where: { id: id },
+        const result = await prisma.recurringBill.updateMany({
+            where: { id: id as string, userId: userId },
             data: {
                 name: name.trim(),
                 amount: Number(amount),
@@ -325,16 +352,22 @@ app.put('/recurring-bills/:id', async (req, res) => {
             },
         });
 
+        if (result.count === 0)
+            return res.status(404).json({ error: 'Bill not found' });
+
+        const updatedBill = await prisma.recurringBill.findUnique({
+            where: { id: id as string },
+        });
         res.status(200).json(updatedBill);
     } catch (error) {
-        console.error('❌ ERROR UPDATING ACCOUNT:', error);
         res.status(500).json({ error: 'Failed to update recurring bill' });
     }
 });
 
 // Route to toggle the "Paid" status and auto-create a transaction
-app.put('/recurring-bills/:id/status', async (req, res) => {
+app.put('/recurring-bills/:id/status', requireAuth(), async (req, res) => {
     try {
+        const userId = getAuth(req).userId as string;
         const { id } = req.params;
         const isPaid = req.body?.isPaid;
 
@@ -342,8 +375,8 @@ app.put('/recurring-bills/:id/status', async (req, res) => {
             return res.status(400).json({ error: 'Missing isPaid in request' });
         }
 
-        const bill = await prisma.recurringBill.findUnique({
-            where: { id: id },
+        const bill = await prisma.recurringBill.findFirst({
+            where: { id: id as string, userId: userId },
         });
 
         if (!bill) {
@@ -351,13 +384,14 @@ app.put('/recurring-bills/:id/status', async (req, res) => {
         }
 
         const updatedBill = await prisma.recurringBill.update({
-            where: { id: id },
+            where: { id: id as string },
             data: { isPaid: isPaid },
         });
 
         if (isPaid === true) {
             await prisma.transaction.create({
                 data: {
+                    userId: userId,
                     name: `[Bill] ${bill.name}`,
                     amount: -bill.amount,
                     category: bill.category,
@@ -368,28 +402,30 @@ app.put('/recurring-bills/:id/status', async (req, res) => {
 
         res.status(200).json(updatedBill);
     } catch (error) {
-        console.error('❌ ERROR CHANGING ACCOUNT STATUS:', error);
         res.status(500).json({ error: 'Failed to update bill status' });
     }
 });
 
 // Route do AI Advisor (Gemini)
-app.post('/api/advisor', async (req, res) => {
+app.post('/api/advisor', requireAuth(), async (req, res) => {
     try {
+        const userId = getAuth(req).userId as string;
         const { question, history } = req.body;
 
         if (!question) {
             return res.status(400).json({ error: 'Please ask a question.' });
         }
 
-        const transactions = await prisma.transaction.findMany();
+        const transactions = await prisma.transaction.findMany({
+            where: { userId: userId },
+        });
         const currentBalance = transactions.reduce(
             (acc, curr) => acc + curr.amount,
             0,
         );
 
         const pendingBills = await prisma.recurringBill.findMany({
-            where: { isPaid: false },
+            where: { isPaid: false, userId: userId },
         });
         const totalPendingBills = pendingBills.reduce(
             (acc, curr) => acc + curr.amount,
@@ -433,7 +469,6 @@ app.post('/api/advisor', async (req, res) => {
 
         res.status(200).json({ answer: result.response.text() });
     } catch (error) {
-        console.error('❌ GEMINI ERROR:', error);
         res.status(500).json({ error: 'Failed to consult the AI Advisor.' });
     }
 });
