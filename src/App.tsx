@@ -1,88 +1,58 @@
 import { Toaster } from '@/components/ui/toaster';
 import { Toaster as Sonner } from '@/components/ui/sonner';
 import { TooltipProvider } from '@/components/ui/tooltip';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { Query, QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { ThemeProvider } from 'next-themes';
-import { AuthProvider, useAuth } from '@/hooks/useAuth';
-import { Loader2 } from 'lucide-react';
 import Index from './pages/Index';
 import Import from './pages/Import';
 import NotFound from './pages/NotFound';
 import Transactions from './pages/Transactions';
 import PotsPage from './pages/Pots';
 import RecurringBills from './pages/RecurringBills';
+import { SignedIn, SignedOut, SignIn, UserButton } from '@clerk/clerk-react';
 
 const queryClient = new QueryClient();
 
-function ProtectedRoute({ children }: { children: React.ReactNode }) {
-    const { user, loading } = useAuth();
-    if (loading)
-        return (
-            <div className="flex min-h-screen items-center justify-center">
-                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-            </div>
-        );
-    if (!user) return <Navigate to="/auth" replace />;
-    return <>{children}</>;
+export default function App() {
+    return (
+        <QueryClientProvider client={queryClient}>
+            <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+                <TooltipProvider>
+                    <Toaster />
+                    <Sonner />
+                    <BrowserRouter>
+                        {/* If the user is not log in -- Only shows the login page -- */}
+                        <SignedOut>
+                            <div className="flex min-h-screen w-full items-center justify-center bg-muted/30">
+                                <SignIn routing="hash" />
+                            </div>
+                        </SignedOut>
+
+                        {/* If the user is log in -- Shows the all app -- */}
+                        <SignedIn>
+                            <div className="absolute top-4 right-4 z-50">
+                                <UserButton afterSignOutUrl="/" />
+                            </div>
+
+                            <Routes>
+                                <Route path="/" element={<Index />} />
+                                <Route
+                                    path="/transactions"
+                                    element={<Transactions />}
+                                />
+                                <Route path="/pots" element={<PotsPage />} />
+                                <Route
+                                    path="/recurring-bills"
+                                    element={<RecurringBills />}
+                                />
+                                <Route path="/import" element={<Import />} />
+                                <Route path="*" element={<NotFound />} />
+                            </Routes>
+                        </SignedIn>
+                    </BrowserRouter>
+                </TooltipProvider>
+            </ThemeProvider>
+        </QueryClientProvider>
+    );
 }
-
-const App = () => (
-    <QueryClientProvider client={queryClient}>
-        <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-            <TooltipProvider>
-                <Toaster />
-                <Sonner />
-                <BrowserRouter>
-                    <AuthProvider>
-                        <Routes>
-                            <Route
-                                path="/"
-                                element={
-                                    <ProtectedRoute>
-                                        <Index />
-                                    </ProtectedRoute>
-                                }
-                            />
-                            <Route
-                                path="/transactions"
-                                element={
-                                    <ProtectedRoute>
-                                        <Transactions />
-                                    </ProtectedRoute>
-                                }
-                            />
-                            <Route
-                                path="/pots"
-                                element={
-                                    <ProtectedRoute>
-                                        <PotsPage />
-                                    </ProtectedRoute>
-                                }
-                            />
-                            <Route
-                                path="/recurring-bills"
-                                element={
-                                    <ProtectedRoute>
-                                        <RecurringBills />
-                                    </ProtectedRoute>
-                                }
-                            />
-                            <Route
-                                path="/import"
-                                element={
-                                    <ProtectedRoute>
-                                        <Import />
-                                    </ProtectedRoute>
-                                }
-                            />
-                            <Route path="*" element={<NotFound />} />
-                        </Routes>
-                    </AuthProvider>
-                </BrowserRouter>
-            </TooltipProvider>
-        </ThemeProvider>
-    </QueryClientProvider>
-);
-
-export default App;

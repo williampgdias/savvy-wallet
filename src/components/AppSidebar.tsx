@@ -10,7 +10,7 @@ import {
     Repeat,
 } from 'lucide-react';
 import { NavLink } from '@/components/NavLink';
-import { useAuth } from '@/hooks/useAuth';
+import { useClerk } from '@clerk/clerk-react';
 import { ThemeToggle } from './ThemeToggle';
 import {
     Sidebar,
@@ -34,7 +34,7 @@ const navItems = [
 ];
 
 export function AppSidebar() {
-    const { signOut } = useAuth();
+    const { signOut } = useClerk();
     const { state } = useSidebar();
     const collapsed = state === 'collapsed';
 
