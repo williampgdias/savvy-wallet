@@ -1,13 +1,22 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
 import useApi from '@/hooks/useApi';
+import { toast } from 'sonner';
+
+interface Bill {
+    id: string;
+    name: string;
+    amount: number;
+    category: string;
+    dueDate: number;
+    isPaid: boolean;
+}
 
 interface AddBillModalProps {
     isOpen: boolean;
     onClose: () => void;
     onSave: () => void;
-    billToEdit?: any;
+    billToEdit?: Bill;
 }
 
 export function AddBillModal({
@@ -64,7 +73,7 @@ export function AddBillModal({
                 onSave();
                 onClose();
             } else {
-                alert('Failed to save the bill!');
+                toast.error('Failed to save the bill.');
             }
         } catch (error) {
             console.error('Error:', error);

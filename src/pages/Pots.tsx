@@ -4,6 +4,7 @@ import { PotsCard } from '@/components/PotsCard';
 import { usePots } from '@/hooks/useTransactions';
 import { Skeleton } from '@/components/ui/skeleton';
 import { CreatePotModal } from '@/components/CreatePotModal';
+import { PocketReminder } from '@/components/PocketReminder';
 import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
 
@@ -31,6 +32,8 @@ export default function PotsPage() {
                     </Button>
                 </div>
 
+                <PocketReminder />
+
                 {isLoading ? (
                     <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
                         {[1, 2, 3].map((i) => (
@@ -40,13 +43,7 @@ export default function PotsPage() {
                 ) : (
                     <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
                         {pots.map((pot) => (
-                            <PotsCard
-                                key={pot.id}
-                                pot={pot}
-                                onAddMoney={(id) =>
-                                    console.log('Depositar no:', id)
-                                }
-                            />
+                            <PotsCard key={pot.id} pot={pot} />
                         ))}
                     </div>
                 )}

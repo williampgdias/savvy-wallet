@@ -15,6 +15,9 @@ model Transaction {
     category        String
     date            DateTime
     createdAt       DateTime    @default(now())
+
+    @@index([userId])
+    @@index([userId, date])
 }
 
 model Pot {
@@ -24,6 +27,8 @@ model Pot {
     targetAmount    Float
     currentAmount   Float       @default(0)
     createdAt       DateTime    @default(now())
+
+    @@index([userId])
 }
 
 model RecurringBill {
@@ -36,4 +41,6 @@ model RecurringBill {
     isPaid          Boolean     @default(false)
     active          Boolean     @default(true)
     createdAt       DateTime    @default(now())
+
+    @@index([userId])
 }

@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
@@ -9,7 +8,7 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
 
 const app = express();
 
-const adapter = new PrismaBetterSqlite3({ url: 'file:./prisma/dev.db' });
+const adapter = new PrismaBetterSqlite3({ url: process.env.DATABASE_URL || 'file:./prisma/dev.db' });
 const prisma = new PrismaClient({ adapter });
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
 
@@ -82,12 +81,12 @@ app.get('/transactions/summary', requireAuth(), async (req, res) => {
         });
 
         const income = transactions
-            .filter((t: any) => t.amount > 0)
-            .reduce((acc: number, t: any) => acc + t.amount, 0);
+            .filter((t) => t.amount > 0)
+            .reduce((acc, t) => acc + t.amount, 0);
 
         const expenses = transactions
-            .filter((t: any) => t.amount < 0)
-            .reduce((acc: number, t: any) => acc + Math.abs(t.amount), 0);
+            .filter((t) => t.amount < 0)
+            .reduce((acc, t) => acc + Math.abs(t.amount), 0);
 
         res.json({
             income,
@@ -119,7 +118,7 @@ app.get('/transactions/categories', requireAuth(), async (req, res) => {
             },
         });
 
-        const categoryMap = expenses.reduce((acc: any, t: any) => {
+        const categoryMap = expenses.reduce((acc: Record<string, number>, t) => {
             const cat = t.category || 'General';
             acc[cat] = (acc[cat] || 0) + Math.abs(t.amount);
             return acc;
@@ -211,6 +210,40 @@ app.post('/transactions', requireAuth(), async (req, res) => {
     }
 });
 
+// Route to edit a transaction
+app.put('/transactions/:id', requireAuth(), async (req, res) => {
+    try {
+        const userId = getAuth(req).userId as string;
+        const { id } = req.params;
+        const { name, amount, category, date } = req.body;
+
+        if (!name || name.trim() === '')
+            return res.status(400).json({ error: 'Description is required' });
+
+        const numericAmount = Number(amount);
+        if (isNaN(numericAmount) || numericAmount === 0)
+            return res.status(400).json({ error: 'A valid non-zero amount is required' });
+
+        const result = await prisma.transaction.updateMany({
+            where: { id, userId },
+            data: {
+                name: name.trim(),
+                amount: numericAmount,
+                category: category || 'General',
+                date: date ? new Date(date) : new Date(),
+            },
+        });
+
+        if (result.count === 0)
+            return res.status(404).json({ error: 'Transaction not found' });
+
+        const updated = await prisma.transaction.findUnique({ where: { id } });
+        res.json(updated);
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to update transaction' });
+    }
+});
+
 // Route to delete the transaction
 app.delete('/transactions/:id', requireAuth(), async (req, res) => {
     try {
@@ -221,6 +254,35 @@ app.delete('/transactions/:id', requireAuth(), async (req, res) => {
         res.status(204).send();
     } catch (error) {
         res.status(500).json({ error: 'Failed to delete transaction' });
+    }
+});
+
+// Route to edit a pot
+app.put('/pots/:id', requireAuth(), async (req, res) => {
+    try {
+        const userId = getAuth(req).userId as string;
+        const { id } = req.params;
+        const { name, targetAmount } = req.body;
+
+        if (!name || name.trim() === '')
+            return res.status(400).json({ error: 'Name is required' });
+
+        const numericTarget = Number(targetAmount);
+        if (isNaN(numericTarget) || numericTarget <= 0)
+            return res.status(400).json({ error: 'Target amount must be greater than zero' });
+
+        const result = await prisma.pot.updateMany({
+            where: { id, userId },
+            data: { name: name.trim(), targetAmount: numericTarget },
+        });
+
+        if (result.count === 0)
+            return res.status(404).json({ error: 'Pot not found' });
+
+        const updated = await prisma.pot.findUnique({ where: { id } });
+        res.json(updated);
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to update pot' });
     }
 });
 
@@ -245,6 +307,9 @@ app.post('/pots/:id/deposit', requireAuth(), async (req, res) => {
         const { amount } = req.body;
         const depositAmount = Number(amount);
 
+        if (!depositAmount || depositAmount <= 0)
+            return res.status(400).json({ error: 'Amount must be greater than zero' });
+
         const pot = await prisma.pot.findFirst({
             where: { id: id as string, userId: userId },
         });
@@ -252,6 +317,15 @@ app.post('/pots/:id/deposit', requireAuth(), async (req, res) => {
             return res
                 .status(404)
                 .json({ error: 'Pot not found or unauthorized' });
+
+        const allTransactions = await prisma.transaction.findMany({
+            where: { userId },
+            select: { amount: true },
+        });
+        const balance = allTransactions.reduce((acc, t) => acc + t.amount, 0);
+
+        if (depositAmount > balance)
+            return res.status(400).json({ error: 'Insufficient balance' });
 
         const updatedPot = await prisma.pot.update({
             where: { id },
@@ -271,6 +345,51 @@ app.post('/pots/:id/deposit', requireAuth(), async (req, res) => {
         res.json({ pot: updatedPot, transaction: newTransaction });
     } catch (error) {
         res.status(500).json({ error: 'Failed to deposit money' });
+    }
+});
+
+// Route to batch import transactions with duplicate prevention
+app.post('/transactions/import', requireAuth(), async (req, res) => {
+    try {
+        const userId = getAuth(req).userId as string;
+        const { transactions } = req.body;
+
+        if (!Array.isArray(transactions) || transactions.length === 0)
+            return res.status(400).json({ error: 'No transactions provided' });
+
+        let imported = 0;
+        let skipped = 0;
+
+        for (const t of transactions) {
+            const existing = await prisma.transaction.findFirst({
+                where: {
+                    userId,
+                    name: t.name,
+                    amount: Number(t.amount),
+                    date: new Date(t.date),
+                },
+            });
+
+            if (existing) {
+                skipped++;
+                continue;
+            }
+
+            await prisma.transaction.create({
+                data: {
+                    userId,
+                    name: t.name.trim(),
+                    amount: Number(t.amount),
+                    category: t.category || 'General',
+                    date: new Date(t.date),
+                },
+            });
+            imported++;
+        }
+
+        res.status(200).json({ imported, skipped });
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to import transactions' });
     }
 });
 
@@ -436,7 +555,7 @@ app.post('/api/advisor', requireAuth(), async (req, res) => {
             history && history.length > 0
                 ? history
                       .map(
-                          (msg: any) =>
+                          (msg: { role: string; text: string }) =>
                               `${msg.role === 'user' ? 'User' : 'Advisor'}: ${msg.text}`,
                       )
                       .join('\n')

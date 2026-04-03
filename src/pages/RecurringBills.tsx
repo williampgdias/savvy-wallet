@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState } from 'react';
 import { DashboardLayout } from '@/components/DashboardLayout';
 import { useRecurringBills } from '@/hooks/useRecurringBills';
@@ -7,17 +6,28 @@ import { AddBillModal } from '@/components/AddBillModal';
 import { useQueryClient } from '@tanstack/react-query';
 import { Trash2, Pencil } from 'lucide-react';
 import useApi from '@/hooks/useApi';
+import { toast } from 'sonner';
+
+interface Bill {
+    id: string;
+    name: string;
+    amount: number;
+    category: string;
+    dueDate: number;
+    isPaid: boolean;
+    active: boolean;
+}
 
 export default function RecurringBills() {
     const { fetchWithAuth } = useApi();
     const { data: bills, isLoading } = useRecurringBills();
     const totalAmount =
-        bills?.reduce(
-            (acc: number, bill: any) => acc + Number(bill.amount),
+        (bills as Bill[] | undefined)?.reduce(
+            (acc, bill) => acc + Number(bill.amount),
             0,
         ) || 0;
     const [isModalOpen, setIsModalOpen] = useState(false);
-    const [editingBill, setEditingBill] = useState<any>(null);
+    const [editingBill, setEditingBill] = useState<Bill | null>(null);
     const queryClient = useQueryClient();
 
     const handleSave = () => {
@@ -38,16 +48,18 @@ export default function RecurringBills() {
                 queryClient.invalidateQueries({
                     queryKey: ['recurring-bills'],
                 });
+                toast.success('Bill deleted.');
             } else {
-                alert('Failed to delete bill');
+                toast.error('Failed to delete bill.');
             }
         } catch (error) {
             console.error('Error deleting bill:', error);
+            toast.error('Failed to delete bill.');
         }
     };
 
     // Function to check if is Paid or not Paid
-    const handleTogglePaid = async (bill: any) => {
+    const handleTogglePaid = async (bill: Bill) => {
         try {
             const response = await fetchWithAuth(
                 `/recurring-bills/${bill.id}/status`,
@@ -63,11 +75,14 @@ export default function RecurringBills() {
                     queryKey: ['recurring-bills'],
                 });
                 queryClient.invalidateQueries({ queryKey: ['transactions'] });
+                queryClient.invalidateQueries({ queryKey: ['summary'] });
+                toast.success(bill.isPaid ? 'Bill marked as unpaid.' : 'Bill marked as paid!');
             } else {
-                alert('Failed to update status');
+                toast.error('Failed to update bill status.');
             }
         } catch (error) {
             console.error('Error:', error);
+            toast.error('Failed to update bill status.');
         }
     };
 
@@ -137,7 +152,7 @@ export default function RecurringBills() {
                                 </thead>
 
                                 <tbody className="divide-y border-t">
-                                    {bills?.map((bill: any) => {
+                                    {(bills as Bill[] | undefined)?.map((bill) => {
                                         const today = new Date().getDate();
                                         const daysLeft = bill.dueDate - today;
 

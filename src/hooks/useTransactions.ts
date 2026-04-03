@@ -1,9 +1,7 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import useApi from './useApi';
 import { toast } from 'sonner';
 
-const API_URL = 'http://localhost:3001/transactions';
 
 export function useTransactions(month: number, year: number, page: number = 1) {
     const { fetchWithAuth } = useApi();
@@ -38,12 +36,88 @@ export function useSummary(month: number, year: number) {
     });
 }
 
+export function useCreateTransaction() {
+    const { fetchWithAuth } = useApi();
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: async (transaction: {
+            name: string;
+            amount: number;
+            category: string;
+            date: string;
+        }) => {
+            const response = await fetchWithAuth('/transactions', {
+                method: 'POST',
+                body: JSON.stringify(transaction),
+            });
+            if (!response.ok) throw new Error('Failed to create transaction');
+            return response.json();
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['transactions'] });
+            queryClient.invalidateQueries({ queryKey: ['summary'] });
+            queryClient.invalidateQueries({ queryKey: ['categories'] });
+            toast.success('Transaction added!');
+        },
+        onError: () => {
+            toast.error('Failed to add transaction. Try again.');
+        },
+    });
+}
+
+export function useUpdateTransaction() {
+    const { fetchWithAuth } = useApi();
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: async ({ id, ...data }: { id: string; name: string; amount: number; category: string; date: string }) => {
+            const response = await fetchWithAuth(`/transactions/${id}`, {
+                method: 'PUT',
+                body: JSON.stringify(data),
+            });
+            if (!response.ok) throw new Error('Failed to update transaction');
+            return response.json();
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['transactions'] });
+            queryClient.invalidateQueries({ queryKey: ['summary'] });
+            queryClient.invalidateQueries({ queryKey: ['categories'] });
+            toast.success('Transaction updated!');
+        },
+        onError: () => {
+            toast.error('Failed to update transaction. Try again.');
+        },
+    });
+}
+
+export function useImportTransactions() {
+    const { fetchWithAuth } = useApi();
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: async (transactions: Array<{ name: string; amount: number; category: string; date: string; is_income: boolean }>): Promise<{ imported: number; skipped: number }> => {
+            const response = await fetchWithAuth('/transactions/import', {
+                method: 'POST',
+                body: JSON.stringify({ transactions }),
+            });
+            if (!response.ok) throw new Error('Failed to import');
+            return response.json();
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['transactions'] });
+            queryClient.invalidateQueries({ queryKey: ['summary'] });
+            queryClient.invalidateQueries({ queryKey: ['categories'] });
+        },
+    });
+}
+
 export function useInsertTransactions() {
     const { fetchWithAuth } = useApi();
     const queryClient = useQueryClient();
 
     return useMutation({
-        mutationFn: async (transactions: any[]) => {
+        mutationFn: async (transactions: Array<{ name: string; amount: number; category: string; date: string }>) => {
             for (const t of transactions) {
                 await fetchWithAuth('/transactions', {
                     method: 'POST',
@@ -106,6 +180,29 @@ export function usePots() {
     });
 }
 
+export function useUpdatePot() {
+    const { fetchWithAuth } = useApi();
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: async ({ id, name, targetAmount }: { id: string; name: string; targetAmount: number }) => {
+            const response = await fetchWithAuth(`/pots/${id}`, {
+                method: 'PUT',
+                body: JSON.stringify({ name, targetAmount }),
+            });
+            if (!response.ok) throw new Error('Failed to update pot');
+            return response.json();
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['pots'] });
+            toast.success('Pot updated!');
+        },
+        onError: () => {
+            toast.error('Failed to update pot. Try again.');
+        },
+    });
+}
+
 export function useCreatePot() {
     const { fetchWithAuth } = useApi();
     const queryClient = useQueryClient();
@@ -144,6 +241,19 @@ export function useDeletePot() {
             toast.success('Pot Deleted!');
         },
     });
+}
+
+export function useExportTransactions() {
+    const { fetchWithAuth } = useApi();
+
+    return async (month: number, year: number) => {
+        const response = await fetchWithAuth(
+            `/transactions?month=${month}&year=${year}&page=1&limit=9999`,
+        );
+        if (!response.ok) throw new Error('Failed to fetch transactions for export');
+        const result = await response.json();
+        return result.data as Array<{ id: string; name: string; amount: number; category: string; date: string }>;
+    };
 }
 
 export function useDepositPot() {
